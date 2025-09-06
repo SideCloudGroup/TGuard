@@ -2,11 +2,12 @@
 
 import logging
 from datetime import datetime
+
 from fastapi import APIRouter, HTTPException
 
-from src.database.connection import get_session
 from src.captcha.factory import get_captcha_provider
 from src.config.settings import config
+from src.database.connection import get_session
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -32,7 +33,7 @@ async def detailed_health_check():
         "version": "1.0.0",
         "checks": {}
     }
-    
+
     # Check database connection
     try:
         async with get_session() as session:
@@ -45,7 +46,7 @@ async def detailed_health_check():
             "error": str(e)
         }
         health_status["status"] = "unhealthy"
-    
+
     # Check captcha provider
     try:
         captcha_provider = get_captcha_provider()
@@ -60,17 +61,17 @@ async def detailed_health_check():
             "error": str(e)
         }
         health_status["status"] = "unhealthy"
-    
+
     # Check configuration
     try:
         # Validate critical config values
         if not config.bot.token or config.bot.token == "YOUR_BOT_TOKEN_HERE":
             raise ValueError("Bot token not configured")
-        
+
         captcha_config = getattr(config.captcha, config.captcha.provider)
         if not captcha_config.site_key or not captcha_config.secret_key:
             raise ValueError("Captcha keys not configured")
-        
+
         health_status["checks"]["configuration"] = {"status": "healthy"}
     except Exception as e:
         logger.error(f"Configuration health check failed: {e}")
@@ -79,8 +80,8 @@ async def detailed_health_check():
             "error": str(e)
         }
         health_status["status"] = "unhealthy"
-    
+
     if health_status["status"] == "unhealthy":
         raise HTTPException(status_code=503, detail=health_status)
-    
+
     return health_status

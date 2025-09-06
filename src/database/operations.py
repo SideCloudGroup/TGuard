@@ -3,22 +3,23 @@
 import logging
 from datetime import datetime
 from typing import Optional, List, Dict, Any
+
 from sqlalchemy import select, update, func
 from sqlalchemy.exc import SQLAlchemyError
 
 from src.database.connection import get_session
-from src.database.models import JoinRequest, VerificationSession, BotSettings, RequestStatus
+from src.database.models import JoinRequest, VerificationSession, RequestStatus
 
 logger = logging.getLogger(__name__)
 
 
 async def create_join_request(
-    user_id: int,
-    chat_id: int,
-    username: Optional[str],
-    first_name: str,
-    last_name: Optional[str],
-    verification_token: str
+        user_id: int,
+        chat_id: int,
+        username: Optional[str],
+        first_name: str,
+        last_name: Optional[str],
+        verification_token: str
 ) -> Optional[JoinRequest]:
     """Create a new join request."""
     try:
@@ -32,7 +33,7 @@ async def create_join_request(
                 )
             )
             existing = existing_request.scalar_one_or_none()
-            
+
             if existing:
                 # Update existing request with new token
                 existing.verification_token = verification_token
@@ -41,7 +42,7 @@ async def create_join_request(
                 await session.commit()
                 logger.info(f"Updated existing join request for user {user_id}")
                 return existing
-            
+
             # Create new request
             join_request = JoinRequest(
                 user_id=user_id,
@@ -51,24 +52,24 @@ async def create_join_request(
                 last_name=last_name,
                 verification_token=verification_token
             )
-            
+
             session.add(join_request)
             await session.commit()
             await session.refresh(join_request)
-            
+
             logger.info(f"Created join request for user {user_id}")
             return join_request
-            
+
     except SQLAlchemyError as e:
         logger.error(f"Error creating join request: {e}")
         return None
 
 
 async def create_verification_session(
-    token: str,
-    user_id: int,
-    chat_id: int,
-    expires_at: datetime
+        token: str,
+        user_id: int,
+        chat_id: int,
+        expires_at: datetime
 ) -> Optional[VerificationSession]:
     """Create a new verification session."""
     try:
@@ -79,21 +80,21 @@ async def create_verification_session(
                 .where(VerificationSession.token == token)
                 .values(expires_at=datetime.utcnow())  # Mark as expired
             )
-            
+
             verification_session = VerificationSession(
                 token=token,
                 user_id=user_id,
                 chat_id=chat_id,
                 expires_at=expires_at
             )
-            
+
             session.add(verification_session)
             await session.commit()
             await session.refresh(verification_session)
-            
+
             logger.info(f"Created verification session for user {user_id}")
             return verification_session
-            
+
     except SQLAlchemyError as e:
         logger.error(f"Error creating verification session: {e}")
         return None
@@ -113,10 +114,10 @@ async def get_verification_session(token: str) -> Optional[VerificationSession]:
 
 
 async def complete_verification(
-    token: str,
-    captcha_response: str,
-    ip_address: Optional[str] = None,
-    user_agent: Optional[str] = None
+        token: str,
+        captcha_response: str,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None
 ) -> bool:
     """Mark verification as completed."""
     try:
@@ -133,18 +134,18 @@ async def complete_verification(
                     completed_time=datetime.utcnow()
                 )
             )
-            
+
             # Update join request
             await session.execute(
                 update(JoinRequest)
                 .where(JoinRequest.verification_token == token)
                 .values(verification_completed=True)
             )
-            
+
             await session.commit()
             logger.info(f"Verification completed for token {token}")
             return True
-            
+
     except SQLAlchemyError as e:
         logger.error(f"Error completing verification: {e}")
         return False
@@ -163,11 +164,11 @@ async def approve_join_request(token: str, admin_id: Optional[int] = None) -> bo
                     admin_id=admin_id
                 )
             )
-            
+
             await session.commit()
             logger.info(f"Join request approved for token {token}")
             return True
-            
+
     except SQLAlchemyError as e:
         logger.error(f"Error approving join request: {e}")
         return False
@@ -218,12 +219,12 @@ async def get_verification_stats(chat_id: int) -> Dict[str, Any]:
                 .where(JoinRequest.chat_id == chat_id)
                 .group_by(JoinRequest.status)
             )
-            
+
             counts = {row.status: row.count for row in result}
-            
+
             total = sum(counts.values())
             approved = counts.get(RequestStatus.APPROVED, 0)
-            
+
             stats = {
                 'total_requests': total,
                 'approved': approved,
@@ -232,9 +233,9 @@ async def get_verification_stats(chat_id: int) -> Dict[str, Any]:
                 'expired': counts.get(RequestStatus.EXPIRED, 0),
                 'approval_rate': (approved / total * 100) if total > 0 else 0
             }
-            
+
             return stats
-            
+
     except SQLAlchemyError as e:
         logger.error(f"Error getting verification stats: {e}")
         return {}
@@ -245,7 +246,7 @@ async def cleanup_expired_sessions():
     try:
         async with get_session()() as session:
             now = datetime.utcnow()
-            
+
             # Mark expired verification sessions
             await session.execute(
                 update(VerificationSession)
@@ -255,7 +256,7 @@ async def cleanup_expired_sessions():
                 )
                 .values(expires_at=now)
             )
-            
+
             # Mark corresponding join requests as expired
             expired_tokens = await session.execute(
                 select(VerificationSession.token)
@@ -264,7 +265,7 @@ async def cleanup_expired_sessions():
                     VerificationSession.captcha_completed == False
                 )
             )
-            
+
             for token_row in expired_tokens:
                 await session.execute(
                     update(JoinRequest)
@@ -274,9 +275,9 @@ async def cleanup_expired_sessions():
                     )
                     .values(status=RequestStatus.EXPIRED)
                 )
-            
+
             await session.commit()
             logger.info("Cleaned up expired sessions")
-            
+
     except SQLAlchemyError as e:
         logger.error(f"Error cleaning up expired sessions: {e}")

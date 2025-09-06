@@ -1,13 +1,14 @@
 """Static file routes for Mini Web App."""
 
 import logging
+
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-from src.database.operations import get_verification_session
 from src.captcha.factory import get_captcha_provider
 from src.config.settings import config
+from src.database.operations import get_verification_session
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -25,25 +26,25 @@ async def verification_page(request: Request, token: str):
         if not session:
             logger.warning(f"Invalid verification token: {token}")
             raise HTTPException(status_code=404, detail="验证链接无效或已过期")
-        
+
         if session.is_expired:
             logger.warning(f"Expired verification token: {token}")
             return templates.TemplateResponse(
                 "expired.html",
                 {"request": request, "message": "验证链接已过期，请重新申请加群"}
             )
-        
+
         if session.captcha_completed:
             logger.info(f"Verification already completed: {token}")
             return templates.TemplateResponse(
                 "completed.html",
                 {"request": request, "message": "您已完成验证，请等待管理员审核"}
             )
-        
+
         # Get captcha configuration
         captcha_provider = get_captcha_provider()
         captcha_config = captcha_provider.get_frontend_config()
-        
+
         return templates.TemplateResponse(
             "verify.html",
             {
@@ -53,7 +54,7 @@ async def verification_page(request: Request, token: str):
                 "api_base_url": config.api.base_url
             }
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:

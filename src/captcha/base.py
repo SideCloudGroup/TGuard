@@ -1,8 +1,8 @@
 """Abstract base class for captcha providers."""
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
 from dataclasses import dataclass
+from typing import Dict, Any, Optional
 
 
 @dataclass
@@ -19,7 +19,7 @@ class CaptchaVerificationResult:
 
 class CaptchaProvider(ABC):
     """Abstract base class for captcha providers."""
-    
+
     def __init__(self, site_key: str, secret_key: str, timeout: int = 30):
         """Initialize captcha provider.
         
@@ -31,13 +31,13 @@ class CaptchaProvider(ABC):
         self.site_key = site_key
         self.secret_key = secret_key
         self.timeout = timeout
-    
+
     @abstractmethod
     async def verify(
-        self,
-        response: str,
-        remote_ip: Optional[str] = None,
-        user_agent: Optional[str] = None
+            self,
+            response: str,
+            remote_ip: Optional[str] = None,
+            user_agent: Optional[str] = None
     ) -> CaptchaVerificationResult:
         """Verify captcha response.
         
@@ -50,7 +50,7 @@ class CaptchaProvider(ABC):
             CaptchaVerificationResult with verification status and details
         """
         pass
-    
+
     @abstractmethod
     def get_frontend_config(self) -> Dict[str, Any]:
         """Get configuration for frontend integration.
@@ -59,7 +59,7 @@ class CaptchaProvider(ABC):
             Dictionary containing frontend configuration
         """
         pass
-    
+
     @property
     @abstractmethod
     def provider_name(self) -> str:

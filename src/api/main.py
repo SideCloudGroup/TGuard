@@ -1,16 +1,16 @@
 """FastAPI backend for TGuard verification system."""
 
-import logging
 import asyncio
+import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
-from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
 
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+
+from src.api.routes import verification, static_files, health
 from src.config.settings import config
 from src.database.connection import init_database, close_database
-from src.api.routes import verification, static_files, health
-
 
 # Setup logging
 logging.basicConfig(
@@ -25,13 +25,13 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Manage application lifespan."""
     logger.info("Starting TGuard API server...")
-    
+
     # Initialize database
     await init_database()
     logger.info("Database initialized")
-    
+
     yield
-    
+
     # Cleanup
     logger.info("Shutting down TGuard API server...")
     await close_database()
@@ -67,22 +67,22 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 async def log_requests(request: Request, call_next):
     """Log all requests."""
     start_time = asyncio.get_event_loop().time()
-    
+
     response = await call_next(request)
-    
+
     process_time = asyncio.get_event_loop().time() - start_time
     logger.info(
         f"{request.method} {request.url.path} - "
         f"Status: {response.status_code} - "
         f"Time: {process_time:.3f}s"
     )
-    
+
     return response
 
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     uvicorn.run(
         "src.api.main:app",
         host=config.api.host,

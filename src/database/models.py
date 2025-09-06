@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from enum import Enum
+
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, BigInteger, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
@@ -20,7 +21,7 @@ class RequestStatus(str, Enum):
 class JoinRequest(Base):
     """Join request model."""
     __tablename__ = "join_requests"
-    
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(BigInteger, nullable=False, index=True)
     chat_id = Column(BigInteger, nullable=False, index=True)
@@ -33,7 +34,7 @@ class JoinRequest(Base):
     processed_time = Column(DateTime, nullable=True)
     admin_id = Column(BigInteger, nullable=True)
     verification_completed = Column(Boolean, nullable=False, default=False)
-    
+
     def __repr__(self):
         return f"<JoinRequest(user_id={self.user_id}, chat_id={self.chat_id}, status={self.status})>"
 
@@ -41,7 +42,7 @@ class JoinRequest(Base):
 class VerificationSession(Base):
     """Verification session model."""
     __tablename__ = "verification_sessions"
-    
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     token = Column(String(64), nullable=False, unique=True, index=True)
     user_id = Column(BigInteger, nullable=False, index=True)
@@ -53,12 +54,12 @@ class VerificationSession(Base):
     created_time = Column(DateTime, nullable=False, default=func.now())
     completed_time = Column(DateTime, nullable=True)
     expires_at = Column(DateTime, nullable=False)
-    
+
     @property
     def is_expired(self) -> bool:
         """Check if session is expired."""
         return datetime.utcnow() > self.expires_at
-    
+
     def __repr__(self):
         return f"<VerificationSession(token={self.token}, user_id={self.user_id}, completed={self.captcha_completed})>"
 
@@ -66,7 +67,7 @@ class VerificationSession(Base):
 class BotSettings(Base):
     """Bot settings model."""
     __tablename__ = "bot_settings"
-    
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     chat_id = Column(BigInteger, nullable=False, unique=True, index=True)
     verification_timeout = Column(Integer, nullable=False, default=300)  # 5 minutes
@@ -76,6 +77,6 @@ class BotSettings(Base):
     max_verification_attempts = Column(Integer, nullable=False, default=3)
     created_time = Column(DateTime, nullable=False, default=func.now())
     updated_time = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
-    
+
     def __repr__(self):
         return f"<BotSettings(chat_id={self.chat_id}, auto_approve={self.auto_approve})>"

@@ -9,7 +9,7 @@
             <div class="text-8xl mb-6">🎉</div>
             <h1 class="text-3xl font-bold mb-4 text-green-600">验证成功！</h1>
             <p class="text-lg mb-6 text-gray-600">您已成功完成人机验证，欢迎加入群组！</p>
-            
+
             <div class="space-y-4">
                 <div class="bg-green-50 border border-green-200 rounded-lg p-4">
                     <div class="flex items-center justify-center space-x-2 text-green-700">
@@ -17,7 +17,7 @@
                         <span class="font-medium">身份验证通过</span>
                     </div>
                 </div>
-                
+
                 <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div class="flex items-center justify-center space-x-2 text-blue-700">
                         <span class="text-xl">🚀</span>
@@ -25,16 +25,16 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="mt-8">
-                <button 
-                    class="tg-button w-full"
-                    onclick="closeWebApp()"
+                <button
+                        class="tg-button w-full"
+                        onclick="closeWebApp()"
                 >
                     返回 Telegram
                 </button>
             </div>
-            
+
             <div class="mt-6 text-sm text-gray-500">
                 <p>🔒 本次验证受到加密保护</p>
                 <p>⚡ 由 TGuard 提供技术支持</p>
@@ -50,10 +50,10 @@
     setTimeout(() => {
         closeWebApp();
     }, 2000);
-    
+
     // Haptic feedback on load
     hapticSuccess();
-    
+
     // Hide back button on success
     tg.BackButton.hide();
 </script>

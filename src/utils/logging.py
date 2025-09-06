@@ -2,20 +2,21 @@
 
 import logging
 import logging.handlers
-import structlog
 from pathlib import Path
 from typing import Any, Dict
+
+import structlog
 
 from src.config.settings import config
 
 
 def setup_logging():
     """Setup structured logging for the application."""
-    
+
     # Create logs directory
     logs_dir = Path("logs")
     logs_dir.mkdir(exist_ok=True)
-    
+
     # Configure structlog
     structlog.configure(
         processors=[
@@ -27,7 +28,7 @@ def setup_logging():
             structlog.processors.StackInfoRenderer(),
             structlog.processors.format_exc_info,
             structlog.processors.UnicodeDecoder(),
-            structlog.processors.JSONRenderer() if config.logging.format == "json" 
+            structlog.processors.JSONRenderer() if config.logging.format == "json"
             else structlog.dev.ConsoleRenderer(colors=True)
         ],
         wrapper_class=structlog.stdlib.BoundLogger,
@@ -35,7 +36,7 @@ def setup_logging():
         context_class=dict,
         cache_logger_on_first_use=True,
     )
-    
+
     # Configure standard library logging
     logging.basicConfig(
         level=getattr(logging, config.logging.level.upper()),
@@ -52,7 +53,7 @@ def setup_logging():
             )
         ]
     )
-    
+
     # Set log levels for third-party libraries
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("asyncpg").setLevel(logging.WARNING)
@@ -66,7 +67,7 @@ def get_logger(name: str) -> structlog.stdlib.BoundLogger:
 
 class LoggerMixin:
     """Mixin class to add logging to any class."""
-    
+
     @property
     def logger(self) -> structlog.stdlib.BoundLogger:
         """Get logger for this class."""

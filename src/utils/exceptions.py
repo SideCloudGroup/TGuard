@@ -5,7 +5,7 @@ from typing import Optional
 
 class TGuardError(Exception):
     """Base exception for TGuard bot."""
-    
+
     def __init__(self, message: str, error_code: Optional[str] = None):
         self.message = message
         self.error_code = error_code
@@ -44,7 +44,7 @@ class TokenError(TGuardError):
 
 class SessionExpiredError(VerificationError):
     """Verification session expired."""
-    
+
     def __init__(self, token: str):
         super().__init__(f"Verification session expired: {token}", "session_expired")
         self.token = token
@@ -52,7 +52,7 @@ class SessionExpiredError(VerificationError):
 
 class InvalidTokenError(TokenError):
     """Invalid verification token."""
-    
+
     def __init__(self, token: str):
         super().__init__(f"Invalid verification token: {token}", "invalid_token")
         self.token = token
@@ -60,7 +60,7 @@ class InvalidTokenError(TokenError):
 
 class CaptchaValidationError(CaptchaError):
     """Captcha validation failed."""
-    
+
     def __init__(self, reason: str):
         super().__init__(f"Captcha validation failed: {reason}", "captcha_failed")
         self.reason = reason
@@ -68,7 +68,7 @@ class CaptchaValidationError(CaptchaError):
 
 class AutoApprovalError(TelegramAPIError):
     """Auto-approval failed."""
-    
+
     def __init__(self, reason: str, user_id: int, chat_id: int):
         super().__init__(f"Auto-approval failed: {reason}", "approval_failed")
         self.reason = reason

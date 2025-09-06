@@ -1,10 +1,10 @@
 """Configuration management for TGuard bot."""
 
-import toml
-from pathlib import Path
-from typing import Dict, Any
 from dataclasses import dataclass
 from functools import lru_cache
+from pathlib import Path
+
+import toml
 
 
 @dataclass
@@ -41,13 +41,21 @@ class CaptchaProviderConfig:
 
 
 @dataclass
+class CapCaptchaConfig:
+    """Cap.js captcha specific configuration."""
+    server_url: str
+    site_key: str
+    secret_key: str
+
+
+@dataclass
 class CaptchaConfig:
     """Captcha configuration."""
     provider: str
     expire_minutes: int
     timeout_seconds: int
     hcaptcha: CaptchaProviderConfig
-    recaptcha: CaptchaProviderConfig
+    cap: CapCaptchaConfig
 
 
 @dataclass
@@ -79,13 +87,13 @@ class Config:
 def load_config(config_path: str = "config.toml") -> Config:
     """Load configuration from TOML file."""
     config_file = Path(config_path)
-    
+
     if not config_file.exists():
         raise FileNotFoundError(f"Configuration file not found: {config_path}")
-    
+
     with open(config_file, 'r', encoding='utf-8') as f:
         data = toml.load(f)
-    
+
     return Config(
         bot=BotConfig(**data['bot']),
         database=DatabaseConfig(**data['database']),
@@ -94,7 +102,7 @@ def load_config(config_path: str = "config.toml") -> Config:
             expire_minutes=data['captcha']['expire_minutes'],
             timeout_seconds=data['captcha']['timeout_seconds'],
             hcaptcha=CaptchaProviderConfig(**data['captcha']['hcaptcha']),
-            recaptcha=CaptchaProviderConfig(**data['captcha']['recaptcha'])
+            cap=CapCaptchaConfig(**data['captcha']['cap'])
         ),
         api=APIConfig(**data['api']),
         logging=LoggingConfig(**data['logging'])

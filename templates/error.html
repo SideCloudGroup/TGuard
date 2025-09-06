@@ -9,7 +9,7 @@
             <div class="text-8xl mb-6">❌</div>
             <h1 class="text-3xl font-bold mb-4 text-red-600">出现错误</h1>
             <p class="text-lg mb-6 text-gray-600">{{ message }}</p>
-            
+
             <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
                 <div class="text-red-700">
                     <div class="font-medium mb-2">🔧 解决方案：</div>
@@ -21,23 +21,23 @@
                     </ul>
                 </div>
             </div>
-            
+
             <div class="space-y-3">
-                <button 
-                    class="tg-button w-full"
-                    onclick="window.location.reload()"
+                <button
+                        class="tg-button w-full"
+                        onclick="window.location.reload()"
                 >
                     刷新页面
                 </button>
-                
-                <button 
-                    class="bg-gray-200 text-gray-700 border border-gray-300 rounded-lg px-6 py-3 w-full"
-                    onclick="closeWebApp()"
+
+                <button
+                        class="bg-gray-200 text-gray-700 border border-gray-300 rounded-lg px-6 py-3 w-full"
+                        onclick="closeWebApp()"
                 >
                     返回 Telegram
                 </button>
             </div>
-            
+
             <div class="mt-6 text-sm text-gray-500">
                 <p>📞 如需帮助，请联系群组管理员</p>
                 <p>⚡ 由 TGuard 提供技术支持</p>
@@ -51,10 +51,10 @@
 <script>
     // Haptic feedback on load
     hapticError();
-    
+
     // Show back button
     tg.BackButton.show();
-    tg.BackButton.onClick(function() {
+    tg.BackButton.onClick(function () {
         tg.close();
     });
 </script>

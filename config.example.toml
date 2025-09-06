@@ -31,6 +31,12 @@ timeout_seconds = 30
 site_key = ""
 secret_key = ""
 
+[captcha.cap]
+# Cap.js server URL (e.g., "https://api.capjs.dev")
+server_url = "https://api.capjs.dev"
+site_key = "your_cap_site_key"
+secret_key = "your_cap_secret_key"
+
 [api]
 # FastAPI server settings
 host = "0.0.0.0"

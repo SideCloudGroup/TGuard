@@ -2,15 +2,15 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>{% block title %}TGuard 群组验证{% endblock %}</title>
-    
+
     <!-- Telegram Web App SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
+
     <!-- Modern CSS Framework -->
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    
+
     <!-- Custom styles -->
     <style>
         :root {
@@ -21,7 +21,7 @@
             --tg-theme-button-color: var(--tg-theme-button-color, #2481cc);
             --tg-theme-button-text-color: var(--tg-theme-button-text-color, #ffffff);
         }
-        
+
         body {
             background-color: var(--tg-theme-bg-color);
             color: var(--tg-theme-text-color);
@@ -30,7 +30,7 @@
             padding: 0;
             overflow-x: hidden;
         }
-        
+
         .tg-button {
             background-color: var(--tg-theme-button-color);
             color: var(--tg-theme-button-text-color);
@@ -42,16 +42,16 @@
             cursor: pointer;
             transition: all 0.2s ease;
         }
-        
+
         .tg-button:hover {
             opacity: 0.8;
         }
-        
+
         .tg-button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
-        
+
         .loading-spinner {
             border: 3px solid #f3f3f3;
             border-top: 3px solid var(--tg-theme-button-color);
@@ -62,12 +62,16 @@
             display: inline-block;
             margin-right: 8px;
         }
-        
+
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
         }
-        
+
         .card {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
@@ -76,74 +80,88 @@
             margin: 16px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
-        
+
         .success-animation {
             animation: successPulse 0.6s ease-out;
         }
-        
+
         @keyframes successPulse {
-            0% { transform: scale(0.8); opacity: 0; }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); opacity: 1; }
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
-        
+
         .error-shake {
             animation: errorShake 0.5s ease-out;
         }
-        
+
         @keyframes errorShake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
+            0%, 100% {
+                transform: translateX(0);
+            }
+            25% {
+                transform: translateX(-5px);
+            }
+            75% {
+                transform: translateX(5px);
+            }
         }
     </style>
-    
+
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-    <div class="min-h-screen flex flex-col">
-        {% block content %}{% endblock %}
-    </div>
-    
-    <script>
-        // Initialize Telegram Web App
-        const tg = window.Telegram.WebApp;
-        
-        // Configure the app
-        tg.ready();
-        tg.expand();
-        
-        // Set header color
-        tg.setHeaderColor('secondary_bg_color');
-        
-        // Disable closing confirmation for better UX
-        tg.disableClosingConfirmation();
-        
-        // Global error handler
-        window.addEventListener('error', function(e) {
-            console.error('Global error:', e.error);
-        });
-        
-        // Show/hide loading
-        function showLoading(element, text = '处理中...') {
-            if (element) {
-                element.innerHTML = `<span class="loading-spinner"></span>${text}`;
-                element.disabled = true;
-            }
+<div class="min-h-screen flex flex-col">
+    {% block content %}{% endblock %}
+</div>
+
+<script>
+    // Initialize Telegram Web App
+    const tg = window.Telegram.WebApp;
+
+    // Configure the app
+    tg.ready();
+    tg.expand();
+
+    // Set header color
+    tg.setHeaderColor('secondary_bg_color');
+
+    // Disable closing confirmation for better UX
+    tg.disableClosingConfirmation();
+
+    // Global error handler
+    window.addEventListener('error', function (e) {
+        console.error('Global error:', e.error);
+    });
+
+    // Show/hide loading
+    function showLoading(element, text = '处理中...') {
+        if (element) {
+            element.innerHTML = `<span class="loading-spinner"></span>${text}`;
+            element.disabled = true;
         }
-        
-        function hideLoading(element, text = '继续') {
-            if (element) {
-                element.innerHTML = text;
-                element.disabled = false;
-            }
+    }
+
+    function hideLoading(element, text = '继续') {
+        if (element) {
+            element.innerHTML = text;
+            element.disabled = false;
         }
-        
-        // Show success message
-        function showSuccess(message) {
-            const container = document.getElementById('message-container');
-            if (container) {
-                container.innerHTML = `
+    }
+
+    // Show success message
+    function showSuccess(message) {
+        const container = document.getElementById('message-container');
+        if (container) {
+            container.innerHTML = `
                     <div class="card success-animation">
                         <div class="text-center">
                             <div class="text-4xl mb-4">✅</div>
@@ -151,14 +169,14 @@
                         </div>
                     </div>
                 `;
-            }
         }
-        
-        // Show error message
-        function showError(message) {
-            const container = document.getElementById('message-container');
-            if (container) {
-                container.innerHTML = `
+    }
+
+    // Show error message
+    function showError(message) {
+        const container = document.getElementById('message-container');
+        if (container) {
+            container.innerHTML = `
                     <div class="card error-shake">
                         <div class="text-center">
                             <div class="text-4xl mb-4">❌</div>
@@ -166,28 +184,28 @@
                         </div>
                     </div>
                 `;
-            }
         }
-        
-        // Close the web app
-        function closeWebApp() {
-            tg.close();
+    }
+
+    // Close the web app
+    function closeWebApp() {
+        tg.close();
+    }
+
+    // Haptic feedback
+    function hapticSuccess() {
+        if (tg.HapticFeedback) {
+            tg.HapticFeedback.notificationOccurred('success');
         }
-        
-        // Haptic feedback
-        function hapticSuccess() {
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.notificationOccurred('success');
-            }
+    }
+
+    function hapticError() {
+        if (tg.HapticFeedback) {
+            tg.HapticFeedback.notificationOccurred('error');
         }
-        
-        function hapticError() {
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.notificationOccurred('error');
-            }
-        }
-    </script>
-    
-    {% block extra_scripts %}{% endblock %}
+    }
+</script>
+
+{% block extra_scripts %}{% endblock %}
 </body>
 </html>

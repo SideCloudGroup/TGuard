@@ -3,8 +3,12 @@
 {% block title %}人机验证 - TGuard{% endblock %}
 
 {% block extra_head %}
-<!-- Load captcha script -->
-<script src="{{ captcha_config.scriptUrl }}" async defer></script>
+<!-- Load captcha script based on provider -->
+{% if captcha_config.provider == 'hcaptcha' %}
+<script async defer src="https://js.hcaptcha.com/1/api.js"></script>
+{% elif captcha_config.provider == 'cap' %}
+<script src="https://cdn.jsdelivr.net/npm/@cap.js/widget"></script>
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -15,29 +19,31 @@
             <h1 class="text-2xl font-bold mb-2">群组验证</h1>
             <p class="text-gray-600">请完成下方的人机验证以加入群组</p>
         </div>
-        
-        <div id="verificationContainer" class="space-y-6">
+
+        <div class="space-y-6" id="verificationContainer">
             <div class="flex justify-center">
+                {% if captcha_config.provider == 'hcaptcha' %}
                 <!-- hCaptcha will be rendered here -->
                 <div id="hcaptcha-container"></div>
-            </div>
-            
-            <div class="text-center">
-                <div class="text-sm text-gray-500">
-                    <p>💡 验证完成后会自动提交</p>
-                    <p>成功后将显示关闭按钮</p>
-                </div>
+                {% elif captcha_config.provider == 'cap' %}
+                <!-- Cap.js widget will be rendered here -->
+                <cap-widget
+                        data-cap-api-endpoint="{{ captcha_config.endpoint }}"
+                        data-cap-site-key="{{ captcha_config.site_key }}"
+                        id="cap-widget"
+                ></cap-widget>
+                {% endif %}
             </div>
         </div>
-        
+
         <div class="mt-6 text-center">
             <div class="text-sm text-gray-500">
+                <p>💡 完成人机验证后页面会自动刷新，请稍等</p>
                 <p>⚡ 由 TGuard 提供技术支持</p>
-                <p>🔒 您的隐私受到保护</p>
             </div>
         </div>
     </div>
-    
+
     <!-- Message container for dynamic content -->
     <div id="message-container"></div>
 </div>
@@ -47,72 +53,136 @@
 <script>
     const token = "{{ token }}";
     const apiBaseUrl = "{{ api_base_url }}";
+    const captchaProvider = "{{ captcha_config.provider }}";
     let captchaResponse = null;
-    
+
+    {%
+        if captcha_config.provider == 'hcaptcha' %
+    }
     // hCaptcha configuration
     const hcaptchaConfig = {
         sitekey: "{{ captcha_config.siteKey }}",
         theme: "{{ captcha_config.theme }}",
         size: "{{ captcha_config.size }}",
-        callback: function(response) {
-            console.log('hCaptcha completed');
+        callback: function (response) {
             captchaResponse = response;
-            
-            // No submit button to enable
-            
-            // Don't show Telegram button during verification process
-            
+
             // Haptic feedback
             hapticSuccess();
-            
+
             // Auto-submit after a short delay
             setTimeout(() => {
                 if (captchaResponse) {
-                    console.log('Auto-submitting verification...');
                     submitVerification();
                 }
             }, 2000);
         },
-        'expired-callback': function() {
-            console.log('hCaptcha expired');
+        'expired-callback': function () {
             captchaResponse = null;
-            
-            // No submit button to disable
         },
-        'error-callback': function(error) {
-            console.error('hCaptcha error:', error);
+        'error-callback': function (error) {
             showError('验证组件加载失败，请刷新页面重试');
             hapticError();
         }
     };
-    
+    {%
+        elif
+        captcha_config.provider == 'cap' %
+    }
+
+    // Cap.js configuration - using event listeners
+    function onCapSolve(event) {
+        captchaResponse = event.detail.token;
+
+        // Haptic feedback
+        hapticSuccess();
+
+        // Auto-submit after a short delay
+        setTimeout(() => {
+            if (captchaResponse) {
+                submitVerification();
+            }
+        }, 2000);
+    }
+
+    function onCapError(event) {
+        showError('验证组件加载失败，请刷新页面重试');
+        hapticError();
+    }
+
+    function onCapExpire(event) {
+        captchaResponse = null;
+    }
+
+    {%
+        endif %
+    }
+
     // Initialize captcha when page loads
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
+        {%
+            if captcha_config.provider == 'hcaptcha' %
+        }
         // Wait for hCaptcha script to load
-        const checkHCaptcha = setInterval(function() {
+        const checkHCaptcha = setInterval(function () {
             if (typeof hcaptcha !== 'undefined') {
                 clearInterval(checkHCaptcha);
-                
+
                 try {
                     // Render hCaptcha
                     hcaptcha.render('hcaptcha-container', hcaptchaConfig);
-                    console.log('hCaptcha rendered successfully');
                 } catch (error) {
-                    console.error('Failed to render hCaptcha:', error);
                     showError('验证组件初始化失败，请刷新页面重试');
                 }
             }
         }, 100);
-        
+
         // Timeout if hCaptcha doesn't load
-        setTimeout(function() {
+        setTimeout(function () {
             if (typeof hcaptcha === 'undefined') {
                 clearInterval(checkHCaptcha);
                 showError('验证组件加载超时，请检查网络连接');
             }
         }, 10000);
+        {%
+            elif
+            captcha_config.provider == 'cap' %
+        }
+        // Wait for Cap.js script to load and setup event listeners
+        const setupCapWidget = () => {
+            const capWidget = document.getElementById('cap-widget');
+            if (!capWidget) {
+                showError('验证组件初始化失败，请刷新页面重试');
+                return;
+            }
+
+            // Add event listeners
+            capWidget.addEventListener('solve', onCapSolve);
+            capWidget.addEventListener('error', onCapError);
+            capWidget.addEventListener('expire', onCapExpire);
+        };
+
+        // Check if Cap.js is loaded
+        let checkCapLoaded = 0;
+        const checkCapInterval = setInterval(() => {
+            checkCapLoaded++;
+
+            // Check if Cap.js custom elements are defined
+            if (customElements.get('cap-widget') || checkCapLoaded > 50) {
+                clearInterval(checkCapInterval);
+
+                if (customElements.get('cap-widget')) {
+                    setupCapWidget();
+                } else {
+                    showError('验证组件加载超时，请刷新页面重试');
+                }
+            }
+        }, 100);
+        {%
+            endif %
+        }
     });
-    
+
     // Verification submission function
     async function submitVerification() {
         if (!captchaResponse) {
@@ -120,10 +190,10 @@
             hapticError();
             return;
         }
-        
+
         // Show loading in the message area instead
         showSuccess('🔄 验证中，请稍候...');
-        
+
         try {
             const response = await fetch(`${apiBaseUrl}/api/v1/verify`, {
                 method: 'POST',
@@ -135,78 +205,86 @@
                     captcha_response: captchaResponse
                 })
             });
-            
+
             const result = await response.json();
-            
+
             if (response.ok && result.success) {
                 showSuccess(result.message);
                 hapticSuccess();
-                
+
                 // No submit button to hide
-                
+
                 // Show Telegram close button
                 tg.MainButton.setText('🎉 关闭页面');
                 tg.MainButton.show();
                 tg.MainButton.enable();
-                
+
                 // Setup success UI
                 setTimeout(() => {
                     showSuccess('🎉 验证成功！点击下方 Telegram 按钮关闭页面');
-                    
+
                     // Clear any existing onClick handlers and setup close function
                     tg.MainButton.offClick();
                     tg.MainButton.onClick(() => {
-                        console.log('Main button clicked, closing app...');
                         if (result.redirect_url) {
                             try {
                                 window.location.href = result.redirect_url;
                                 // Fallback close after redirect attempt
                                 setTimeout(() => closeWebApp(), 1000);
                             } catch (e) {
-                                console.log('Redirect failed, closing directly');
                                 closeWebApp();
                             }
                         } else {
                             closeWebApp();
                         }
                     });
-                    
+
                 }, 500);
-                
+
             } else {
                 throw new Error(result.detail || result.message || '验证失败');
             }
-            
+
         } catch (error) {
-            console.error('Verification error:', error);
             showError(error.message || '网络错误，请重试');
             hapticError();
-            
+
             // Keep Telegram button hidden during error state
-            
+
             // Reset captcha and UI
+            {%
+                if captcha_config.provider == 'hcaptcha' %
+            }
             if (typeof hcaptcha !== 'undefined') {
                 hcaptcha.reset();
             }
+            {%
+                elif
+                captcha_config.provider == 'cap' %
+            }
+            // Cap.js auto-resets on error, just clear the response
+            {%
+                endif %
+            }
             captchaResponse = null;
-            
+
             // No submit button to show
-            
+
         } finally {
             // No submit button to reset
         }
     }
-    
+
     // No form submission handler needed since there's no submit button
-    
+
     // Telegram main button is only used for closing after success
     // No initial onClick handler needed
-    
+
     // Handle back button
-    tg.BackButton.onClick(function() {
+    tg.BackButton.onClick(function () {
         tg.close();
     });
-    
+
     // Show back button
     tg.BackButton.show();
 </script>
@@ -215,25 +293,47 @@
     .pulse {
         animation: pulse 2s infinite;
     }
-    
+
     @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-        100% { transform: scale(1); }
+        0% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.05);
+        }
+        100% {
+            transform: scale(1);
+        }
     }
-    
-    #hcaptcha-container {
+
+    #hcaptcha-container, #cap-widget {
         min-height: 78px;
         display: flex;
         justify-content: center;
         align-items: center;
     }
-    
+
+    /* Cap.js widget styling */
+    cap-widget {
+        display: block;
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto;
+    }
+
+    #cap-trigger {
+        display: none;
+    }
+
     /* Responsive captcha */
     @media (max-width: 480px) {
         #hcaptcha-container iframe {
             transform: scale(0.9);
             transform-origin: center;
+        }
+
+        cap-widget {
+            max-width: 280px;
         }
     }
 </style>

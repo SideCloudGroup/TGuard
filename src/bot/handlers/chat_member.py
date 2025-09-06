@@ -2,12 +2,12 @@
 
 import logging
 from datetime import datetime, timedelta
-from aiogram import Router, F
-from aiogram.types import ChatJoinRequest, InlineKeyboardMarkup, InlineKeyboardButton
+
+from aiogram import Router
 from aiogram.exceptions import TelegramBadRequest
+from aiogram.types import ChatJoinRequest, InlineKeyboardMarkup, InlineKeyboardButton
 
 from src.config.settings import config
-from src.database.models import JoinRequest, VerificationSession
 from src.database.operations import create_join_request, create_verification_session
 from src.utils.crypto import generate_verification_token
 
@@ -21,12 +21,12 @@ async def handle_join_request(join_request: ChatJoinRequest):
     try:
         user = join_request.from_user
         chat = join_request.chat
-        
+
         logger.info(f"New join request from user {user.id} ({user.username}) to chat {chat.id}")
-        
+
         # Generate verification token
         verification_token = generate_verification_token()
-        
+
         # Create join request record
         db_join_request = await create_join_request(
             user_id=user.id,
@@ -36,11 +36,11 @@ async def handle_join_request(join_request: ChatJoinRequest):
             last_name=user.last_name,
             verification_token=verification_token
         )
-        
+
         if not db_join_request:
             logger.error(f"Failed to create join request for user {user.id}")
             return
-        
+
         # Create verification session
         expires_at = datetime.utcnow() + timedelta(seconds=config.bot.verification_timeout)
         verification_session = await create_verification_session(
@@ -49,14 +49,14 @@ async def handle_join_request(join_request: ChatJoinRequest):
             chat_id=chat.id,
             expires_at=expires_at
         )
-        
+
         if not verification_session:
             logger.error(f"Failed to create verification session for user {user.id}")
             return
-        
+
         # Create Mini Web App URL
         web_app_url = f"{config.api.base_url}/verify?token={verification_token}"
-        
+
         # Create inline keyboard with verification button
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(
@@ -64,24 +64,24 @@ async def handle_join_request(join_request: ChatJoinRequest):
                 web_app={"url": web_app_url}
             )]
         ])
-        
+
         # Send verification message to user
         try:
             # Create personalized welcome message with group name
             chat_title = chat.title or "群组"
             welcome_text = f"欢迎加入群组{chat_title}！请点击下方链接完成人机验证："
-            
+
             await join_request.bot.send_message(
                 chat_id=user.id,
                 text=welcome_text,
                 reply_markup=keyboard
             )
             logger.info(f"Verification message sent to user {user.id}")
-            
+
         except TelegramBadRequest as e:
             if "chat not found" in str(e).lower():
                 logger.warning(f"Cannot send message to user {user.id}: user hasn't started bot")
-                
+
                 # Try to send message to the group mentioning the user
                 try:
                     bot_info = await join_request.bot.get_me()
@@ -96,7 +96,7 @@ async def handle_join_request(join_request: ChatJoinRequest):
                     logger.error(f"Failed to send group message: {group_msg_error}")
             else:
                 logger.error(f"Failed to send verification message: {e}")
-                
+
     except Exception as e:
         logger.error(f"Error handling join request: {e}")
 

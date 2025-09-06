@@ -1,8 +1,9 @@
 """hCaptcha provider implementation."""
 
-import httpx
 import logging
 from typing import Dict, Any, Optional
+
+import httpx
 
 from .base import CaptchaProvider, CaptchaVerificationResult
 
@@ -11,18 +12,18 @@ logger = logging.getLogger(__name__)
 
 class HCaptchaProvider(CaptchaProvider):
     """hCaptcha verification provider."""
-    
+
     VERIFY_URL = "https://hcaptcha.com/siteverify"
-    
+
     @property
     def provider_name(self) -> str:
         return "hcaptcha"
-    
+
     async def verify(
-        self,
-        response: str,
-        remote_ip: Optional[str] = None,
-        user_agent: Optional[str] = None
+            self,
+            response: str,
+            remote_ip: Optional[str] = None,
+            user_agent: Optional[str] = None
     ) -> CaptchaVerificationResult:
         """Verify hCaptcha response."""
         try:
@@ -32,10 +33,10 @@ class HCaptchaProvider(CaptchaProvider):
                 "response": response,
                 "sitekey": self.site_key
             }
-            
+
             if remote_ip:
                 data["remoteip"] = remote_ip
-            
+
             # Make verification request
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response_obj = await client.post(
@@ -46,13 +47,13 @@ class HCaptchaProvider(CaptchaProvider):
                         "User-Agent": user_agent or "TGuard-Bot/1.0"
                     }
                 )
-                
+
                 response_obj.raise_for_status()
                 result = response_obj.json()
-            
+
             # Parse response
             success = result.get("success", False)
-            
+
             if success:
                 logger.info("hCaptcha verification successful")
                 return CaptchaVerificationResult(
@@ -65,7 +66,7 @@ class HCaptchaProvider(CaptchaProvider):
                 error_codes = result.get("error-codes", [])
                 error_code = error_codes[0] if error_codes else "unknown-error"
                 error_message = self._get_error_message(error_code)
-                
+
                 logger.warning(f"hCaptcha verification failed: {error_code}")
                 return CaptchaVerificationResult(
                     success=False,
@@ -73,7 +74,7 @@ class HCaptchaProvider(CaptchaProvider):
                     error_message=error_message,
                     extra_data=result
                 )
-                
+
         except httpx.RequestError as e:
             logger.error(f"hCaptcha request error: {e}")
             return CaptchaVerificationResult(
@@ -95,17 +96,16 @@ class HCaptchaProvider(CaptchaProvider):
                 error_code="internal-error",
                 error_message="验证过程中发生错误"
             )
-    
+
     def get_frontend_config(self) -> Dict[str, Any]:
         """Get hCaptcha frontend configuration."""
         return {
             "provider": "hcaptcha",
             "siteKey": self.site_key,
-            "scriptUrl": "https://js.hcaptcha.com/1/api.js",
             "theme": "light",
             "size": "normal"
         }
-    
+
     def _get_error_message(self, error_code: str) -> str:
         """Get user-friendly error message for error code."""
         error_messages = {
@@ -119,5 +119,5 @@ class HCaptchaProvider(CaptchaProvider):
             "sitekey-secret-mismatch": "配置错误：密钥不匹配",
             "timeout-or-duplicate": "验证超时或重复提交"
         }
-        
+
         return error_messages.get(error_code, f"验证失败：{error_code}")
