@@ -124,7 +124,7 @@ async def verify_captcha(
             return VerificationResponse(
                 success=True,
                 message="✅ 验证成功！您已被批准加入群组。",
-                redirect_url="https://t.me"  # Redirect to Telegram
+                redirect_url="tg://"  # Deep link back to Telegram
             )
         else:
             logger.warning(f"Auto-approval failed: {approval_result.error}")

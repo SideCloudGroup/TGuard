@@ -116,8 +116,8 @@
         // Set header color
         tg.setHeaderColor('secondary_bg_color');
         
-        // Enable closing confirmation
-        tg.enableClosingConfirmation();
+        // Disable closing confirmation for better UX
+        tg.disableClosingConfirmation();
         
         // Global error handler
         window.addEventListener('error', function(e) {

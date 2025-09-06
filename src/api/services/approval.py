@@ -54,9 +54,18 @@ async def auto_approve_user(verification_token: str) -> ApprovalResult:
             
             # Send welcome message to user (optional)
             try:
+                # Get chat info to include group name
+                chat_info = await bot.get_chat(join_request.chat_id)
+                chat_title = chat_info.title if chat_info.title else "群组"
+                
+                # Escape group name for MarkdownV2
+                from src.utils.markdown import escape_markdown_v2
+                escaped_title = escape_markdown_v2(chat_title)
+                
                 await bot.send_message(
                     chat_id=join_request.user_id,
-                    text="🎉 <b>验证成功！</b>\n\n您已成功加入群组，欢迎！"
+                    text=f"🎉 *验证成功\\!*\n\n您已成功加入 *{escaped_title}*，欢迎\\!",
+                    parse_mode="MarkdownV2"
                 )
             except TelegramBadRequest as e:
                 # Don't fail the approval if we can't send welcome message

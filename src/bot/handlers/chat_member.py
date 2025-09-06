@@ -67,9 +67,13 @@ async def handle_join_request(join_request: ChatJoinRequest):
         
         # Send verification message to user
         try:
+            # Create personalized welcome message with group name
+            chat_title = chat.title or "群组"
+            welcome_text = f"欢迎加入群组{chat_title}！请点击下方链接完成人机验证："
+            
             await join_request.bot.send_message(
                 chat_id=user.id,
-                text=config.bot.welcome_message,
+                text=welcome_text,
                 reply_markup=keyboard
             )
             logger.info(f"Verification message sent to user {user.id}")
@@ -80,10 +84,13 @@ async def handle_join_request(join_request: ChatJoinRequest):
                 
                 # Try to send message to the group mentioning the user
                 try:
+                    bot_info = await join_request.bot.get_me()
+                    username = user.username or user.first_name
                     await join_request.bot.send_message(
                         chat_id=chat.id,
-                        text=f"@{user.username or user.first_name}, 请先私聊 @{(await join_request.bot.get_me()).username} 机器人，然后重新申请加群。",
-                        reply_markup=keyboard
+                        text=f"@{username}, 请先私聊 @{bot_info.username} 机器人，然后重新申请加群\\.",
+                        reply_markup=keyboard,
+                        parse_mode="MarkdownV2"
                     )
                 except Exception as group_msg_error:
                     logger.error(f"Failed to send group message: {group_msg_error}")

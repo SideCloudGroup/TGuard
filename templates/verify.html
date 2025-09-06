@@ -16,23 +16,19 @@
             <p class="text-gray-600">请完成下方的人机验证以加入群组</p>
         </div>
         
-        <form id="verificationForm" class="space-y-6">
+        <div id="verificationContainer" class="space-y-6">
             <div class="flex justify-center">
                 <!-- hCaptcha will be rendered here -->
                 <div id="hcaptcha-container"></div>
             </div>
             
             <div class="text-center">
-                <button 
-                    type="submit" 
-                    id="submitBtn" 
-                    class="tg-button w-full"
-                    disabled
-                >
-                    提交验证
-                </button>
+                <div class="text-sm text-gray-500">
+                    <p>💡 验证完成后会自动提交</p>
+                    <p>成功后将显示关闭按钮</p>
+                </div>
             </div>
-        </form>
+        </div>
         
         <div class="mt-6 text-center">
             <div class="text-sm text-gray-500">
@@ -62,22 +58,26 @@
             console.log('hCaptcha completed');
             captchaResponse = response;
             
-            // Enable submit button
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = false;
-            submitBtn.classList.add('pulse');
+            // No submit button to enable
+            
+            // Don't show Telegram button during verification process
             
             // Haptic feedback
             hapticSuccess();
+            
+            // Auto-submit after a short delay
+            setTimeout(() => {
+                if (captchaResponse) {
+                    console.log('Auto-submitting verification...');
+                    submitVerification();
+                }
+            }, 2000);
         },
         'expired-callback': function() {
             console.log('hCaptcha expired');
             captchaResponse = null;
             
-            // Disable submit button
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-            submitBtn.classList.remove('pulse');
+            // No submit button to disable
         },
         'error-callback': function(error) {
             console.error('hCaptcha error:', error);
@@ -113,18 +113,16 @@
         }, 10000);
     });
     
-    // Handle form submission
-    document.getElementById('verificationForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
+    // Verification submission function
+    async function submitVerification() {
         if (!captchaResponse) {
             showError('请先完成人机验证');
             hapticError();
             return;
         }
         
-        const submitBtn = document.getElementById('submitBtn');
-        showLoading(submitBtn, '验证中...');
+        // Show loading in the message area instead
+        showSuccess('🔄 验证中，请稍候...');
         
         try {
             const response = await fetch(`${apiBaseUrl}/api/v1/verify`, {
@@ -144,14 +142,36 @@
                 showSuccess(result.message);
                 hapticSuccess();
                 
-                // Auto-close after success
+                // No submit button to hide
+                
+                // Show Telegram close button
+                tg.MainButton.setText('🎉 关闭页面');
+                tg.MainButton.show();
+                tg.MainButton.enable();
+                
+                // Setup success UI
                 setTimeout(() => {
-                    if (result.redirect_url) {
-                        window.location.href = result.redirect_url;
-                    } else {
-                        closeWebApp();
-                    }
-                }, 2000);
+                    showSuccess('🎉 验证成功！点击下方 Telegram 按钮关闭页面');
+                    
+                    // Clear any existing onClick handlers and setup close function
+                    tg.MainButton.offClick();
+                    tg.MainButton.onClick(() => {
+                        console.log('Main button clicked, closing app...');
+                        if (result.redirect_url) {
+                            try {
+                                window.location.href = result.redirect_url;
+                                // Fallback close after redirect attempt
+                                setTimeout(() => closeWebApp(), 1000);
+                            } catch (e) {
+                                console.log('Redirect failed, closing directly');
+                                closeWebApp();
+                            }
+                        } else {
+                            closeWebApp();
+                        }
+                    });
+                    
+                }, 500);
                 
             } else {
                 throw new Error(result.detail || result.message || '验证失败');
@@ -162,17 +182,25 @@
             showError(error.message || '网络错误，请重试');
             hapticError();
             
-            // Reset captcha
+            // Keep Telegram button hidden during error state
+            
+            // Reset captcha and UI
             if (typeof hcaptcha !== 'undefined') {
                 hcaptcha.reset();
             }
             captchaResponse = null;
             
+            // No submit button to show
+            
         } finally {
-            hideLoading(submitBtn, '提交验证');
-            submitBtn.disabled = !captchaResponse;
+            // No submit button to reset
         }
-    });
+    }
+    
+    // No form submission handler needed since there's no submit button
+    
+    // Telegram main button is only used for closing after success
+    // No initial onClick handler needed
     
     // Handle back button
     tg.BackButton.onClick(function() {
