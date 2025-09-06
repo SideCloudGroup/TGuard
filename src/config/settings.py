@@ -12,7 +12,6 @@ class BotConfig:
     """Bot configuration."""
     token: str
     verification_timeout: int
-    welcome_message: str
     verification_button_text: str
     admin_ids: list[int]
 

@@ -61,9 +61,7 @@
     const captchaProvider = "{{ captcha_config.provider }}";
     let captchaResponse = null;
 
-    {%
-        if captcha_config.provider == 'hcaptcha' %
-    }
+    {% if captcha_config.provider == 'hcaptcha' %}
     // hCaptcha configuration
     const hcaptchaConfig = {
         sitekey: "{{ captcha_config.siteKey }}",
@@ -90,10 +88,7 @@
             hapticError();
         }
     };
-    {%
-        elif
-        captcha_config.provider == 'turnstile' %
-    }
+    {% elif captcha_config.provider == 'turnstile' %}
     // Turnstile configuration
     const turnstileConfig = {
         sitekey: "{{ captcha_config.siteKey }}",
@@ -121,10 +116,7 @@
             hapticError();
         }
     };
-    {%
-        elif
-        captcha_config.provider == 'cap' %
-    }
+    {% elif captcha_config.provider == 'cap' %}
 
     // Cap.js configuration - using event listeners
     function onCapSolve(event) {
@@ -150,15 +142,11 @@
         captchaResponse = null;
     }
 
-    {%
-        endif %
-    }
+    {% endif %}
 
     // Initialize captcha when page loads
     document.addEventListener('DOMContentLoaded', function () {
-        {%
-            if captcha_config.provider == 'hcaptcha' %
-        }
+        {% if captcha_config.provider == 'hcaptcha' %}
         // Wait for hCaptcha script to load
         const checkHCaptcha = setInterval(function () {
             if (typeof hcaptcha !== 'undefined') {
@@ -180,10 +168,7 @@
                 showError('验证组件加载超时，请检查网络连接');
             }
         }, 10000);
-        {%
-            elif
-            captcha_config.provider == 'turnstile' %
-        }
+        {% elif captcha_config.provider == 'turnstile' %}
         // Wait for Turnstile script to load
         const checkTurnstile = setInterval(function () {
             if (typeof turnstile !== 'undefined') {
@@ -205,10 +190,7 @@
                 showError('验证组件加载超时，请检查网络连接');
             }
         }, 10000);
-        {%
-            elif
-            captcha_config.provider == 'cap' %
-        }
+        {% elif captcha_config.provider == 'cap' %}
         // Wait for Cap.js script to load and setup event listeners
         const setupCapWidget = () => {
             const capWidget = document.getElementById('cap-widget');
@@ -239,9 +221,7 @@
                 }
             }
         }, 100);
-        {%
-            endif %
-        }
+        {% endif %}
     });
 
     // Verification submission function
@@ -313,27 +293,17 @@
             // Keep Telegram button hidden during error state
 
             // Reset captcha and UI
-            {%
-                if captcha_config.provider == 'hcaptcha' %
-            }
+            {% if captcha_config.provider == 'hcaptcha' %}
             if (typeof hcaptcha !== 'undefined') {
                 hcaptcha.reset();
             }
-            {%
-                elif
-                captcha_config.provider == 'turnstile' %
-            }
+            {% elif captcha_config.provider == 'turnstile' %}
             if (typeof turnstile !== 'undefined') {
                 turnstile.reset('#turnstile-container');
             }
-            {%
-                elif
-                captcha_config.provider == 'cap' %
-            }
+            {% elif captcha_config.provider == 'cap' %}
             // Cap.js auto-resets on error, just clear the response
-            {%
-                endif %
-            }
+            {% endif %}
             captchaResponse = null;
 
             // No submit button to show

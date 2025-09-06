@@ -3,8 +3,6 @@
 token = ""
 # Verification timeout in seconds (5 minutes)
 verification_timeout = 300
-# Welcome message template (will be followed by group name)
-welcome_message = "欢迎加入群组"
 # Verification button text
 verification_button_text = "🔐 开始验证"
 # Admin user IDs (array of integers)
