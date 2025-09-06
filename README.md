@@ -7,8 +7,8 @@
 - [✨ 特性](#-特性)
 - [🛡️ 支持的验证码驱动](#️-支持的验证码驱动)
 - [🚀 使用教程](#-使用教程)
-  - [📱 使用现有服务](#-使用现有服务)
-  - [🛠️ 自建部署](#️-自建部署)
+    - [📱 使用现有服务](#-使用现有服务)
+    - [🛠️ 自建部署](#️-自建部署)
 - [📋 使用流程](#-使用流程)
 - [🔧 API接口](#-api接口)
 - [🏗️ 项目结构](#️-项目结构)
@@ -31,10 +31,10 @@
 
 ## 🛡️ 支持的验证码驱动
 
-| 驱动 | 状态 | 描述                      | 配置要求 |
-|------|------|-------------------------|----------|
-| **hCaptcha** | ✅ 完全支持 | 隐私友好的人机验证服务             | `site_key`, `secret_key` |
-| **Cap.js** | ✅ 完全支持 | 基于Proof-Of-Work的验证码解决方案 | `server_url`, `site_key`, `secret_key` |
+| 驱动           | 状态     | 描述                      | 配置要求                                   |
+|--------------|--------|-------------------------|----------------------------------------|
+| **hCaptcha** | ✅ 完全支持 | 隐私友好的人机验证服务             | `site_key`, `secret_key`               |
+| **Cap.js**   | ✅ 完全支持 | 基于Proof-Of-Work的验证码解决方案 | `server_url`, `site_key`, `secret_key` |
 
 ### 验证码驱动特性
 
@@ -148,16 +148,17 @@ TGuard采用抽象接口设计，轻松支持新的验证码服务：
 ```python
 from src.captcha.base import CaptchaProvider, CaptchaVerificationResult
 
+
 class YourCaptchaProvider(CaptchaProvider):
     @property
     def provider_name(self) -> str:
         return "your_captcha"
-    
+
     async def verify(self, response: str, **kwargs) -> CaptchaVerificationResult:
         # 实现验证逻辑
         # 返回 CaptchaVerificationResult 对象
         pass
-    
+
     def get_frontend_config(self) -> Dict[str, Any]:
         # 返回前端配置
         # 包含验证码服务所需的所有配置

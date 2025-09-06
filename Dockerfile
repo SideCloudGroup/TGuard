@@ -1,25 +1,40 @@
-FROM python:3.13-slim
+# Multi-stage build for smaller final image
+FROM python:3.13-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache \
+    gcc \
+    musl-dev \
+    libffi-dev \
+    postgresql-dev
+
+# Copy requirements and install Python packages
+COPY requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# Final stage
+FROM python:3.13-alpine
+
+# Install only runtime dependencies
+RUN apk add --no-cache \
+    libpq \
+    && adduser -D -s /bin/sh app
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements first for better Docker layer caching
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy Python packages from builder stage
+COPY --from=builder /root/.local /home/app/.local
 
 # Copy application code
 COPY . .
 
 # Create logs directory
-RUN mkdir -p /app/logs
+RUN mkdir -p /app/logs && chown -R app:app /app
 
-# Create non-root user
-RUN useradd --create-home --shell /bin/bash app && chown -R app:app /app
 USER app
+
+# Add user's local bin to PATH
+ENV PATH=/home/app/.local/bin:$PATH
 
 EXPOSE 8000
 

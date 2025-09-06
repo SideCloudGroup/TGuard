@@ -9,15 +9,15 @@ services:
       POSTGRES_PASSWORD: password
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
 
   bot:
-    image: ghcr.io/sidecloudgroup/tguard:latest
+    build: .
     depends_on:
       postgres:
         condition: service_healthy
@@ -36,7 +36,7 @@ services:
       start_period: 40s
 
   api:
-    image: ghcr.io/sidecloudgroup/tguard:latest
+    build: .
     depends_on:
       postgres:
         condition: service_healthy
