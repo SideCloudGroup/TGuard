@@ -1,0 +1,43 @@
+[bot]
+# Telegram Bot Token (fill this with your actual bot token)
+token = ""
+# Verification timeout in seconds (5 minutes)
+verification_timeout = 300
+# Welcome message template
+welcome_message = "欢迎加入群组！请点击下方链接完成人机验证："
+# Verification button text
+verification_button_text = "🔐 开始验证"
+
+[database]
+host = "postgres"
+port = 5432
+name = "tguard"
+user = "postgres"
+password = "password"
+# Connection pool settings
+min_size = 1
+max_size = 10
+
+[captcha]
+# Captcha provider: "hcaptcha"
+provider = "hcaptcha"
+# Verification expire time in minutes
+expire_minutes = 10
+# HTTP timeout for captcha validation
+timeout_seconds = 30
+
+[captcha.hcaptcha]
+# Get these from https://www.hcaptcha.com/
+site_key = ""
+secret_key = ""
+
+[api]
+# FastAPI server settings
+host = "0.0.0.0"
+port = 8000
+# Base URL for Mini Web App (update this with your domain)
+base_url = "https://example.com"
+
+[logging]
+level = "INFO"
+format = "json"

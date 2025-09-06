@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}验证已完成 - TGuard{% endblock %}
+
+{% block content %}
+<div class="flex-1 flex flex-col justify-center">
+    <div class="card">
+        <div class="text-center">
+            <div class="text-8xl mb-6">✅</div>
+            <h1 class="text-3xl font-bold mb-4 text-blue-600">验证已完成</h1>
+            <p class="text-lg mb-6 text-gray-600">{{ message }}</p>
+            
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div class="text-blue-700">
+                    <div class="font-medium mb-2">📋 当前状态：</div>
+                    <div class="text-left space-y-2 text-sm">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-green-500">✓</span>
+                            <span>人机验证已完成</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-blue-500">⏳</span>
+                            <span>等待管理员审核</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <div class="text-yellow-700 text-sm">
+                    <span class="font-medium">💡 提示：</span>
+                    请耐心等待，管理员通常会在24小时内处理申请
+                </div>
+            </div>
+            
+            <button 
+                class="tg-button w-full"
+                onclick="closeWebApp()"
+            >
+                返回 Telegram
+            </button>
+            
+            <div class="mt-6 text-sm text-gray-500">
+                <p>🔔 您将收到加群通知</p>
+                <p>⚡ 由 TGuard 提供技术支持</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Auto-close after 5 seconds
+    setTimeout(() => {
+        closeWebApp();
+    }, 5000);
+    
+    // Show back button
+    tg.BackButton.show();
+    tg.BackButton.onClick(function() {
+        tg.close();
+    });
+</script>
+{% endblock %}

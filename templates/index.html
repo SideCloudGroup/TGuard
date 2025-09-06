@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}TGuard - 智能群组验证机器人{% endblock %}
+
+{% block content %}
+<div class="flex-1 flex flex-col justify-center">
+    <div class="card">
+        <div class="text-center">
+            <div class="text-8xl mb-6">🤖</div>
+            <h1 class="text-4xl font-bold mb-4">TGuard</h1>
+            <p class="text-xl mb-6 text-gray-600">智能群组验证机器人</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="text-blue-700">
+                        <div class="text-2xl mb-2">🔐</div>
+                        <div class="font-medium">安全验证</div>
+                        <div class="text-sm">高级人机验证技术</div>
+                    </div>
+                </div>
+                
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div class="text-green-700">
+                        <div class="text-2xl mb-2">⚡</div>
+                        <div class="font-medium">自动处理</div>
+                        <div class="text-sm">验证通过即刻入群</div>
+                    </div>
+                </div>
+                
+                <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                    <div class="text-purple-700">
+                        <div class="text-2xl mb-2">🛡️</div>
+                        <div class="font-medium">防护机制</div>
+                        <div class="text-sm">有效阻止恶意用户</div>
+                    </div>
+                </div>
+                
+                <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                    <div class="text-orange-700">
+                        <div class="text-2xl mb-2">📱</div>
+                        <div class="font-medium">用户友好</div>
+                        <div class="text-sm">简单易用的界面</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
+                <h3 class="font-bold mb-3">📋 使用流程</h3>
+                <div class="text-left space-y-2 text-sm">
+                    <div class="flex items-center space-x-2">
+                        <span class="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">1</span>
+                        <span>申请加入群组</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">2</span>
+                        <span>收到验证链接</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">3</span>
+                        <span>完成人机验证</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">4</span>
+                        <span>自动批准入群</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-sm text-gray-500">
+                <p>🔒 您的隐私和安全是我们的首要任务</p>
+                <p>⚡ 基于现代化技术构建</p>
+                <p>📞 如有问题，请联系群组管理员</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Hide back button on index page
+    tg.BackButton.hide();
+    
+    // Set main button if needed
+    tg.MainButton.setText('了解更多');
+    tg.MainButton.onClick(function() {
+        // Could link to documentation or help
+        window.open('https://github.com/yourrepo/tguard', '_blank');
+    });
+</script>
+{% endblock %}

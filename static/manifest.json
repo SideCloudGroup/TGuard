@@ -1,0 +1,23 @@
+{
+  "name": "TGuard - 群组验证机器人",
+  "short_name": "TGuard",
+  "description": "Telegram群组智能验证系统",
+  "version": "1.0.0",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#2481cc",
+  "background_color": "#ffffff",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: tguard
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  bot:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - PYTHONPATH=/app
+    volumes:
+      - ./config.toml:/app/config.toml
+      - ./logs:/app/logs
+    command: python -m src.bot.main
+    restart: unless-stopped
+
+  api:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "17985:8000"
+    environment:
+      - PYTHONPATH=/app
+    volumes:
+      - ./config.toml:/app/config.toml
+      - ./logs:/app/logs
+      - ./static:/app/static
+    command: python -m src.api.main
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

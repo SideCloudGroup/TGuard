@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}验证已过期 - TGuard{% endblock %}
+
+{% block content %}
+<div class="flex-1 flex flex-col justify-center">
+    <div class="card">
+        <div class="text-center">
+            <div class="text-8xl mb-6">⏰</div>
+            <h1 class="text-3xl font-bold mb-4 text-orange-600">验证已过期</h1>
+            <p class="text-lg mb-6 text-gray-600">{{ message }}</p>
+            
+            <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+                <div class="text-orange-700">
+                    <div class="font-medium mb-2">💡 如何重新验证：</div>
+                    <ol class="text-left space-y-1 text-sm">
+                        <li>1. 返回群组</li>
+                        <li>2. 重新申请加入</li>
+                        <li>3. 点击新的验证链接</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <div class="space-y-3">
+                <button 
+                    class="tg-button w-full"
+                    onclick="closeWebApp()"
+                >
+                    返回 Telegram
+                </button>
+                
+                <button 
+                    class="bg-gray-200 text-gray-700 border border-gray-300 rounded-lg px-6 py-3 w-full"
+                    onclick="window.location.reload()"
+                >
+                    刷新页面
+                </button>
+            </div>
+            
+            <div class="mt-6 text-sm text-gray-500">
+                <p>🕐 验证链接有效期：5分钟</p>
+                <p>⚡ 由 TGuard 提供技术支持</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Haptic feedback on load
+    hapticError();
+    
+    // Show back button
+    tg.BackButton.show();
+    tg.BackButton.onClick(function() {
+        tg.close();
+    });
+</script>
+{% endblock %}
