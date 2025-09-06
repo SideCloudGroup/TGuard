@@ -20,6 +20,10 @@
             --tg-theme-link-color: var(--tg-theme-link-color, #2481cc);
             --tg-theme-button-color: var(--tg-theme-button-color, #2481cc);
             --tg-theme-button-text-color: var(--tg-theme-button-text-color, #ffffff);
+            --tg-theme-secondary-bg-color: var(--tg-theme-secondary-bg-color, #f1f1f1);
+            --tg-theme-section-bg-color: var(--tg-theme-section-bg-color, #ffffff);
+            --tg-theme-section-header-text-color: var(--tg-theme-section-header-text-color, #000000);
+            --tg-theme-subtitle-text-color: var(--tg-theme-subtitle-text-color, #999999);
         }
 
         body {
@@ -73,12 +77,37 @@
         }
 
         .card {
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--tg-theme-section-bg-color);
             backdrop-filter: blur(10px);
             border-radius: 16px;
             padding: 24px;
             margin: 16px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Telegram theme-aware text colors */
+        .text-fg {
+            color: var(--tg-theme-text-color);
+        }
+
+        .text-fg-secondary {
+            color: var(--tg-theme-subtitle-text-color);
+        }
+
+        .text-fg-hint {
+            color: var(--tg-theme-hint-color);
+        }
+
+        .text-fg-link {
+            color: var(--tg-theme-link-color);
+        }
+
+        .bg-section {
+            background-color: var(--tg-theme-section-bg-color);
+        }
+
+        .bg-secondary {
+            background-color: var(--tg-theme-secondary-bg-color);
         }
 
         .success-animation {
