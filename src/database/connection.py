@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 
 from src.config.settings import config
 from src.database.models import Base
+from src.database.migrations.manager import run_migrations
 
 logger = logging.getLogger(__name__)
 
@@ -37,9 +38,8 @@ async def init_database():
             expire_on_commit=False
         )
 
-        # Create tables
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+        # Run migrations instead of creating tables directly
+        await run_migrations(async_session_factory)
 
         logger.info("Database initialized successfully")
 

@@ -241,6 +241,58 @@ async def get_verification_stats(chat_id: int) -> Dict[str, Any]:
         return {}
 
 
+async def get_global_stats() -> Dict[str, Any]:
+    """Get global verification statistics."""
+    try:
+        async with get_session()() as session:
+            # Get total counts by status
+            result = await session.execute(
+                select(
+                    JoinRequest.status,
+                    func.count(JoinRequest.id).label('count')
+                )
+                .group_by(JoinRequest.status)
+            )
+
+            counts = {row.status: row.count for row in result}
+
+            total = sum(counts.values())
+            approved = counts.get(RequestStatus.APPROVED, 0)
+
+            # Get today's stats
+            today = datetime.utcnow().date()
+            today_result = await session.execute(
+                select(
+                    JoinRequest.status,
+                    func.count(JoinRequest.id).label('count')
+                )
+                .where(func.date(JoinRequest.request_time) == today)
+                .group_by(JoinRequest.status)
+            )
+
+            today_counts = {row.status: row.count for row in today_result}
+            today_total = sum(today_counts.values())
+            today_approved = today_counts.get(RequestStatus.APPROVED, 0)
+
+            stats = {
+                'total_requests': total,
+                'approved': approved,
+                'rejected': counts.get(RequestStatus.REJECTED, 0),
+                'pending': counts.get(RequestStatus.PENDING, 0),
+                'expired': counts.get(RequestStatus.EXPIRED, 0),
+                'approval_rate': (approved / total * 100) if total > 0 else 0,
+                'today_total': today_total,
+                'today_approved': today_approved,
+                'today_approval_rate': (today_approved / today_total * 100) if today_total > 0 else 0
+            }
+
+            return stats
+
+    except SQLAlchemyError as e:
+        logger.error(f"Error getting global stats: {e}")
+        return {}
+
+
 async def cleanup_expired_sessions():
     """Clean up expired verification sessions and requests."""
     try:

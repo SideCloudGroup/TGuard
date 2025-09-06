@@ -8,6 +8,8 @@
 <script async defer src="https://js.hcaptcha.com/1/api.js"></script>
 {% elif captcha_config.provider == 'cap' %}
 <script src="https://cdn.jsdelivr.net/npm/@cap.js/widget"></script>
+{% elif captcha_config.provider == 'turnstile' %}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 {% endif %}
 {% endblock %}
 
@@ -32,6 +34,9 @@
                         data-cap-site-key="{{ captcha_config.site_key }}"
                         id="cap-widget"
                 ></cap-widget>
+                {% elif captcha_config.provider == 'turnstile' %}
+                <!-- Turnstile widget will be rendered here -->
+                <div id="turnstile-container"></div>
                 {% endif %}
             </div>
         </div>
@@ -66,6 +71,37 @@
         size: "{{ captcha_config.size }}",
         callback: function (response) {
             captchaResponse = response;
+
+            // Haptic feedback
+            hapticSuccess();
+
+            // Auto-submit after a short delay
+            setTimeout(() => {
+                if (captchaResponse) {
+                    submitVerification();
+                }
+            }, 2000);
+        },
+        'expired-callback': function () {
+            captchaResponse = null;
+        },
+        'error-callback': function (error) {
+            showError('验证组件加载失败，请刷新页面重试');
+            hapticError();
+        }
+    };
+    {%
+        elif
+        captcha_config.provider == 'turnstile' %
+    }
+    // Turnstile configuration
+    const turnstileConfig = {
+        sitekey: "{{ captcha_config.siteKey }}",
+        theme: "{{ captcha_config.theme }}",
+        size: "{{ captcha_config.size }}",
+        language: "{{ captcha_config.language }}",
+        callback: function (token) {
+            captchaResponse = token;
 
             // Haptic feedback
             hapticSuccess();
@@ -141,6 +177,31 @@
         setTimeout(function () {
             if (typeof hcaptcha === 'undefined') {
                 clearInterval(checkHCaptcha);
+                showError('验证组件加载超时，请检查网络连接');
+            }
+        }, 10000);
+        {%
+            elif
+            captcha_config.provider == 'turnstile' %
+        }
+        // Wait for Turnstile script to load
+        const checkTurnstile = setInterval(function () {
+            if (typeof turnstile !== 'undefined') {
+                clearInterval(checkTurnstile);
+
+                try {
+                    // Render Turnstile
+                    turnstile.render('#turnstile-container', turnstileConfig);
+                } catch (error) {
+                    showError('验证组件初始化失败，请刷新页面重试');
+                }
+            }
+        }, 100);
+
+        // Timeout if Turnstile doesn't load
+        setTimeout(function () {
+            if (typeof turnstile === 'undefined') {
+                clearInterval(checkTurnstile);
                 showError('验证组件加载超时，请检查网络连接');
             }
         }, 10000);
@@ -260,6 +321,13 @@
             }
             {%
                 elif
+                captcha_config.provider == 'turnstile' %
+            }
+            if (typeof turnstile !== 'undefined') {
+                turnstile.reset('#turnstile-container');
+            }
+            {%
+                elif
                 captcha_config.provider == 'cap' %
             }
             // Cap.js auto-resets on error, just clear the response
@@ -306,7 +374,7 @@
         }
     }
 
-    #hcaptcha-container, #cap-widget {
+    #hcaptcha-container, #cap-widget, #turnstile-container {
         min-height: 78px;
         display: flex;
         justify-content: center;

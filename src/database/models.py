@@ -64,19 +64,3 @@ class VerificationSession(Base):
         return f"<VerificationSession(token={self.token}, user_id={self.user_id}, completed={self.captcha_completed})>"
 
 
-class BotSettings(Base):
-    """Bot settings model."""
-    __tablename__ = "bot_settings"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    chat_id = Column(BigInteger, nullable=False, unique=True, index=True)
-    verification_timeout = Column(Integer, nullable=False, default=300)  # 5 minutes
-    welcome_message = Column(Text, nullable=True)
-    rejection_message = Column(Text, nullable=True)
-    auto_approve = Column(Boolean, nullable=False, default=True)
-    max_verification_attempts = Column(Integer, nullable=False, default=3)
-    created_time = Column(DateTime, nullable=False, default=func.now())
-    updated_time = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
-
-    def __repr__(self):
-        return f"<BotSettings(chat_id={self.chat_id}, auto_approve={self.auto_approve})>"

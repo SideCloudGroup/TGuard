@@ -7,6 +7,7 @@ from src.config.settings import config
 from .base import CaptchaProvider
 from .cap import CapProvider
 from .hcaptcha import HCaptchaProvider
+from .turnstile import TurnstileProvider
 
 logger = logging.getLogger(__name__)
 
@@ -14,8 +15,7 @@ logger = logging.getLogger(__name__)
 CAPTCHA_PROVIDERS: Dict[str, Type[CaptchaProvider]] = {
     "hcaptcha": HCaptchaProvider,
     "cap": CapProvider,
-    # Add more providers here as needed
-    # "turnstile": TurnstileProvider,
+    "turnstile": TurnstileProvider,
 }
 
 
@@ -56,6 +56,19 @@ def create_captcha_provider() -> CaptchaProvider:
             )
         provider = provider_class(
             server_url=provider_config.server_url,
+            site_key=provider_config.site_key,
+            secret_key=provider_config.secret_key,
+            timeout=config.captcha.timeout_seconds
+        )
+    elif provider_name == "turnstile":
+        provider_config = config.captcha.turnstile
+        # Validate configuration
+        if not provider_config.site_key or not provider_config.secret_key:
+            raise ValueError(
+                f"Missing configuration for {provider_name}. "
+                f"Please set site_key and secret_key in config.toml"
+            )
+        provider = provider_class(
             site_key=provider_config.site_key,
             secret_key=provider_config.secret_key,
             timeout=config.captcha.timeout_seconds

@@ -14,6 +14,7 @@ class BotConfig:
     verification_timeout: int
     welcome_message: str
     verification_button_text: str
+    admin_ids: list[int]
 
 
 @dataclass
@@ -49,6 +50,13 @@ class CapCaptchaConfig:
 
 
 @dataclass
+class TurnstileCaptchaConfig:
+    """Turnstile captcha specific configuration."""
+    site_key: str
+    secret_key: str
+
+
+@dataclass
 class CaptchaConfig:
     """Captcha configuration."""
     provider: str
@@ -56,6 +64,7 @@ class CaptchaConfig:
     timeout_seconds: int
     hcaptcha: CaptchaProviderConfig
     cap: CapCaptchaConfig
+    turnstile: TurnstileCaptchaConfig
 
 
 @dataclass
@@ -94,7 +103,8 @@ def load_config(config_path: str = "config.toml") -> Config:
             expire_minutes=data['captcha']['expire_minutes'],
             timeout_seconds=data['captcha']['timeout_seconds'],
             hcaptcha=CaptchaProviderConfig(**data['captcha']['hcaptcha']),
-            cap=CapCaptchaConfig(**data['captcha']['cap'])
+            cap=CapCaptchaConfig(**data['captcha']['cap']),
+            turnstile=TurnstileCaptchaConfig(**data['captcha']['turnstile'])
         ),
         api=APIConfig(**data['api'])
     )

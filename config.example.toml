@@ -3,10 +3,12 @@
 token = ""
 # Verification timeout in seconds (5 minutes)
 verification_timeout = 300
-# Welcome message template
-welcome_message = "欢迎加入群组！请点击下方链接完成人机验证："
+# Welcome message template (will be followed by group name)
+welcome_message = "欢迎加入群组"
 # Verification button text
 verification_button_text = "🔐 开始验证"
+# Admin user IDs (array of integers)
+admin_ids = []
 
 [database]
 host = "postgres"
@@ -19,7 +21,7 @@ min_size = 1
 max_size = 10
 
 [captcha]
-# Captcha provider: "hcaptcha"
+# Captcha provider: "hcaptcha", "cap", or "turnstile"
 provider = "hcaptcha"
 # Verification expire time in minutes
 expire_minutes = 10
@@ -37,13 +39,14 @@ server_url = "https://api.capjs.dev"
 site_key = "your_cap_site_key"
 secret_key = "your_cap_secret_key"
 
+[captcha.turnstile]
+# Get these from https://developers.cloudflare.com/turnstile/
+site_key = ""
+secret_key = ""
+
 [api]
 # FastAPI server settings
 host = "0.0.0.0"
 port = 8000
 # Base URL for Mini Web App (update this with your domain)
 base_url = "https://example.com"
-
-[logging]
-level = "INFO"
-format = "json"
