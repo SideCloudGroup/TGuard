@@ -2,9 +2,7 @@ name: Build & Push Docker (multi-arch)
 
 on:
   push:
-    branches: [ "main" ]
     tags: [ "v*" ]
-  pull_request:
 
 permissions:
   contents: read
@@ -46,6 +44,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
+            type=ref,event=tag
             type=raw,value=latest
 
       - name: Build and push multi-arch image
