@@ -12,9 +12,9 @@ from src.api.routes import verification, static_files, health
 from src.config.settings import config
 from src.database.connection import init_database, close_database
 
-# Setup logging
+# Setup basic logging
 logging.basicConfig(
-    level=getattr(logging, config.logging.level),
+    level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
@@ -88,5 +88,5 @@ if __name__ == "__main__":
         host=config.api.host,
         port=config.api.port,
         reload=False,
-        log_level=config.logging.level.lower()
+        log_level="info"
     )

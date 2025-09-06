@@ -25,11 +25,8 @@ WORKDIR /app
 # Copy Python packages from builder stage
 COPY --from=builder /root/.local /home/app/.local
 
-# Copy application code
+# Copy application code (includes static files)
 COPY . .
-
-# Create logs directory
-RUN mkdir -p /app/logs && chown -R app:app /app
 
 USER app
 

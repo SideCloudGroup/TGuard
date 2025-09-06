@@ -14,9 +14,9 @@ from src.database.connection import init_database
 
 async def main():
     """Main bot function."""
-    # Setup logging
+    # Setup basic logging
     logging.basicConfig(
-        level=getattr(logging, config.logging.level),
+        level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
 

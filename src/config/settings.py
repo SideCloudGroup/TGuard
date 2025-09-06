@@ -67,20 +67,12 @@ class APIConfig:
 
 
 @dataclass
-class LoggingConfig:
-    """Logging configuration."""
-    level: str
-    format: str
-
-
-@dataclass
 class Config:
     """Main configuration class."""
     bot: BotConfig
     database: DatabaseConfig
     captcha: CaptchaConfig
     api: APIConfig
-    logging: LoggingConfig
 
 
 @lru_cache()
@@ -104,8 +96,7 @@ def load_config(config_path: str = "config.toml") -> Config:
             hcaptcha=CaptchaProviderConfig(**data['captcha']['hcaptcha']),
             cap=CapCaptchaConfig(**data['captcha']['cap'])
         ),
-        api=APIConfig(**data['api']),
-        logging=LoggingConfig(**data['logging'])
+        api=APIConfig(**data['api'])
     )
 
 
