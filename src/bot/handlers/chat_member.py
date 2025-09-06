@@ -69,7 +69,7 @@ async def handle_join_request(join_request: ChatJoinRequest):
         try:
             # Create personalized welcome message with group name
             chat_title = chat.title or "群组"
-            welcome_text = f"请点击下方链接完成人机验证"
+            welcome_text = f"欢迎加入群组{chat_title}！请点击下方链接完成人机验证"
 
             await join_request.bot.send_message(
                 chat_id=user.id,
