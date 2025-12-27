@@ -48,3 +48,7 @@ host = "0.0.0.0"
 port = 8000
 # Base URL for Mini Web App (update this with your domain)
 base_url = "https://example.com"
+# Enable external API access
+enable = false
+# API Key for external API authentication (X-API-Key header)
+api_key = ""

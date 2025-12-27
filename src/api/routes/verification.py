@@ -22,6 +22,7 @@ class VerificationRequest(BaseModel):
     """Verification request model."""
     token: str
     captcha_response: str
+    user_id: Optional[int] = None
 
 
 class VerificationResponse(BaseModel):
@@ -81,6 +82,18 @@ async def verify_captcha(
                 status_code=400,
                 detail="验证已完成，请勿重复提交"
             )
+
+        # Verify user ID if provided (for external API requests)
+        if verification_req.user_id is not None:
+            if verification_req.user_id != session.user_id:
+                logger.warning(
+                    f"User ID mismatch for token {token}: "
+                    f"expected {session.user_id}, got {verification_req.user_id}"
+                )
+                raise HTTPException(
+                    status_code=403,
+                    detail="用户身份验证失败"
+                )
 
         # Get client info
         client_ip = get_client_ip(request)

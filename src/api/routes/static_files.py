@@ -41,6 +41,9 @@ async def verification_page(request: Request, token: str):
                 {"request": request, "message": "您已完成验证，请等待管理员审核"}
             )
 
+        # Pass expected user_id to template for client-side validation
+        # The client will verify this matches the Telegram Web App user ID
+        
         # Get captcha configuration
         captcha_provider = get_captcha_provider()
         captcha_config = captcha_provider.get_frontend_config()
@@ -50,6 +53,7 @@ async def verification_page(request: Request, token: str):
             {
                 "request": request,
                 "token": token,
+                "expected_user_id": session.user_id,
                 "captcha_config": captcha_config,
                 "api_base_url": config.api.base_url
             }

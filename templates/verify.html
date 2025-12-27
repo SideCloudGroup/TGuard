@@ -59,7 +59,29 @@
     const token = "{{ token }}";
     const apiBaseUrl = "{{ api_base_url }}";
     const captchaProvider = "{{ captcha_config.provider }}";
+    const expectedUserId = {{ expected_user_id }};
     let captchaResponse = null;
+    
+    // Get user ID from Telegram Web App
+    let telegramUserId = null;
+    try {
+        if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            telegramUserId = tg.initDataUnsafe.user.id;
+        }
+    } catch (e) {
+        console.error('Failed to get Telegram user ID:', e);
+    }
+    
+    // Verify user ID matches on page load
+    if (telegramUserId !== null && telegramUserId !== expectedUserId) {
+        showError('用户身份验证失败，此验证链接不属于您');
+        hapticError();
+        // Hide captcha container
+        const container = document.getElementById('verificationContainer');
+        if (container) {
+            container.innerHTML = '<div class="text-center text-red-600">❌ 用户身份验证失败</div>';
+        }
+    }
 
     {% if captcha_config.provider == 'hcaptcha' %}
     // hCaptcha configuration
@@ -243,7 +265,8 @@
                 },
                 body: JSON.stringify({
                     token: token,
-                    captcha_response: captchaResponse
+                    captcha_response: captchaResponse,
+                    user_id: telegramUserId
                 })
             });
 

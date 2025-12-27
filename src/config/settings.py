@@ -72,6 +72,8 @@ class APIConfig:
     host: str
     port: int
     base_url: str
+    enable: bool = False
+    api_key: str = ""
 
 
 @dataclass
@@ -105,7 +107,13 @@ def load_config(config_path: str = "config.toml") -> Config:
             cap=CapCaptchaConfig(**data['captcha']['cap']),
             turnstile=TurnstileCaptchaConfig(**data['captcha']['turnstile'])
         ),
-        api=APIConfig(**data['api'])
+        api=APIConfig(
+            host=data['api']['host'],
+            port=data['api']['port'],
+            base_url=data['api']['base_url'],
+            enable=data['api'].get('enable', False),
+            api_key=data['api'].get('api_key', '')
+        )
     )
 
 

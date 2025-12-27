@@ -8,7 +8,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from src.api.routes import verification, static_files, health
+from src.api.routes import verification, static_files, health, external
 from src.config.settings import config
 from src.database.connection import init_database, close_database
 
@@ -56,6 +56,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(verification.router, prefix="/api/v1")
+app.include_router(external.router, prefix="/api")
 app.include_router(static_files.router)
 app.include_router(health.router)
 
