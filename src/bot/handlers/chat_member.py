@@ -27,14 +27,15 @@ async def handle_join_request(join_request: ChatJoinRequest):
         # Generate verification token
         verification_token = generate_verification_token()
 
-        # Create join request record
+        # Create join request record (marked as telegram type)
         db_join_request = await create_join_request(
             user_id=user.id,
             chat_id=chat.id,
             username=user.username,
             first_name=user.first_name,
             last_name=user.last_name,
-            verification_token=verification_token
+            verification_token=verification_token,
+            request_type="telegram"
         )
 
         if not db_join_request:

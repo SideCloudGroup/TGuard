@@ -26,6 +26,7 @@
 - 📊 **管理功能** - 完整的统计和管理命令
 - 🐳 **容器化部署** - Docker支持，一键部署
 - 🔧 **高性能** - 基于Python 3.13 + aiogram + FastAPI
+- 🔌 **外部API** - 提供RESTful API接口，支持第三方Bot集成和多用途验证
 
 ## 🛡️ 支持的验证码驱动
 
@@ -97,6 +98,51 @@ docker-compose up -d
 - `POST /api/v1/verify` - 提交验证
 - `GET /api/v1/verification-status/{token}` - 查询验证状态
 - `GET /api/v1/captcha-config` - 获取验证码配置
+
+### 外部API（External API）
+
+TGuard 提供了外部 API 接口，允许其他 Telegram Bot 通过 API 创建验证请求，实现多用途的验证功能。
+
+#### 启用外部API
+
+在 `config.toml` 中配置：
+
+```toml
+[api]
+enable = true  # 启用外部API
+api_key = "your-secret-api-key"  # 设置API密钥
+```
+
+#### API接口
+
+- `POST /api/verification/create` - 创建验证请求
+  - **认证**: 需要在请求头中提供 `X-API-Key: your-secret-api-key`
+  - **请求体**:
+    ```json
+    {
+      "user_id": 123456789
+    }
+    ```
+  - **响应**:
+    ```json
+    {
+      "token": "verification-token",
+      "verification_url": "https://example.com/verify?token=...",
+      "expires_at": "2025-01-01T12:00:00"
+    }
+    ```
+  - **说明**: 
+    - 验证链接和Token有效期为10分钟
+    - 验证完成后，如果请求类型为API且chat_id有效，将自动执行approve操作
+    - 验证链接通过Telegram Mini Web App打开，用户完成验证后，可通过token查询验证状态
+
+#### 使用场景
+
+外部API适用于以下场景：
+
+- **第三方Bot集成**: 其他Telegram Bot可以通过API创建验证请求
+- **多用途验证**: 不仅限于群组加群验证，可用于任何需要人机验证的场景
+- **统一验证服务**: 作为独立的验证服务，为多个应用提供验证能力
 
 ### 健康检查
 

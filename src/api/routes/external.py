@@ -52,21 +52,22 @@ async def create_verification(
         # Use 0 as chat_id for external API requests (not tied to a specific chat)
         chat_id = 0
         
-        # Create join request record (with minimal data)
+        # Create join request record (with minimal data, marked as API type)
         db_join_request = await create_join_request(
             user_id=user_id,
             chat_id=chat_id,
             username=None,
             first_name="",
             last_name=None,
-            verification_token=verification_token
+            verification_token=verification_token,
+            request_type="api"
         )
         
         if not db_join_request:
             logger.error(f"Failed to create join request for user {user_id}")
             raise HTTPException(
                 status_code=500,
-                detail="创建加群请求失败"
+                detail="创建验证请求失败"
             )
         
         # Create verification session

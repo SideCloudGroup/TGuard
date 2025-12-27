@@ -6,6 +6,7 @@ from typing import List
 from .base import MigrationManager
 from .migration_001_initial_schema import InitialSchemaMigration
 from .migration_002_add_user_stats import AddUserStatsMigration
+from .migration_003_add_request_type import AddRequestTypeMigration
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,7 @@ def get_migration_manager(session_factory):
     # Register all migrations
     manager.register_migration(InitialSchemaMigration())
     manager.register_migration(AddUserStatsMigration())
+    manager.register_migration(AddRequestTypeMigration())
     
     return manager
 

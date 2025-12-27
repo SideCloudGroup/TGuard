@@ -32,6 +32,11 @@ async def auto_approve_user(verification_token: str) -> ApprovalResult:
             logger.warning(f"Join request already processed: {join_request.status}")
             return ApprovalResult(False, f"申请已处理：{join_request.status}")
 
+        # Check if chat_id is valid (not 0)
+        if join_request.chat_id == 0:
+            logger.warning(f"Cannot approve request with chat_id=0 (API request without chat)")
+            return ApprovalResult(False, "无效的群组ID")
+
         # Create bot instance
         bot = Bot(token=config.bot.token)
 
@@ -53,24 +58,25 @@ async def auto_approve_user(verification_token: str) -> ApprovalResult:
                 f"for chat {join_request.chat_id}"
             )
 
-            # Send welcome message to user (optional)
-            try:
-                # Get chat info to include group name
-                chat_info = await bot.get_chat(join_request.chat_id)
-                chat_title = chat_info.title if chat_info.title else "群组"
+                # Send welcome message to user (optional, only for telegram requests)
+            if join_request.request_type == "telegram":
+                try:
+                    # Get chat info to include group name
+                    chat_info = await bot.get_chat(join_request.chat_id)
+                    chat_title = chat_info.title if chat_info.title else "群组"
 
-                # Escape group name for MarkdownV2
-                from src.utils.markdown import escape_markdown_v2
-                escaped_title = escape_markdown_v2(chat_title)
+                    # Escape group name for MarkdownV2
+                    from src.utils.markdown import escape_markdown_v2
+                    escaped_title = escape_markdown_v2(chat_title)
 
-                await bot.send_message(
-                    chat_id=join_request.user_id,
-                    text=f"🎉 *验证成功\\!*\n\n您已成功加入 *{escaped_title}*，欢迎\\!",
-                    parse_mode="MarkdownV2"
-                )
-            except TelegramBadRequest as e:
-                # Don't fail the approval if we can't send welcome message
-                logger.warning(f"Could not send welcome message to {join_request.user_id}: {e}")
+                    await bot.send_message(
+                        chat_id=join_request.user_id,
+                        text=f"🎉 *验证成功\\!*\n\n您已成功加入 *{escaped_title}*，欢迎\\!",
+                        parse_mode="MarkdownV2"
+                    )
+                except TelegramBadRequest as e:
+                    # Don't fail the approval if we can't send welcome message
+                    logger.warning(f"Could not send welcome message to {join_request.user_id}: {e}")
 
             return ApprovalResult(True)
 

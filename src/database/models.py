@@ -34,6 +34,7 @@ class JoinRequest(Base):
     processed_time = Column(DateTime, nullable=True)
     admin_id = Column(BigInteger, nullable=True)
     verification_completed = Column(Boolean, nullable=False, default=False)
+    request_type = Column(String(20), nullable=False, default="telegram", index=True)  # "telegram" or "api"
 
     def __repr__(self):
         return f"<JoinRequest(user_id={self.user_id}, chat_id={self.chat_id}, status={self.status})>"

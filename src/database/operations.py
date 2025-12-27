@@ -19,7 +19,8 @@ async def create_join_request(
         username: Optional[str],
         first_name: str,
         last_name: Optional[str],
-        verification_token: str
+        verification_token: str,
+        request_type: str = "telegram"
 ) -> Optional[JoinRequest]:
     """Create a new join request."""
     try:
@@ -50,7 +51,8 @@ async def create_join_request(
                 username=username,
                 first_name=first_name,
                 last_name=last_name,
-                verification_token=verification_token
+                verification_token=verification_token,
+                request_type=request_type
             )
 
             session.add(join_request)

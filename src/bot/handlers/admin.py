@@ -8,6 +8,7 @@ from aiogram.filters import Command
 from aiogram.types import Message
 
 from src.bot.filters import AdminFilter
+from src.config.settings import config
 from src.database.operations import get_global_stats
 
 logger = logging.getLogger(__name__)
@@ -97,6 +98,43 @@ async def cmd_stats(message: Message):
         logger.error(f"Error in stats command: {e}")
         await message.answer(
             "❌ *获取统计数据时发生错误*\n\n"
+            "请稍后重试",
+            parse_mode="MarkdownV2"
+        )
+
+
+@router.message(Command("api"), AdminFilter())
+async def cmd_api(message: Message):
+    """Handle /api command (admin only, not in menu)."""
+    try:
+        api_config = config.api
+        
+        if api_config.enable:
+            # API is enabled, show URL and KEY
+            api_text = (
+                "🔌 *API 状态：已启用*\n\n"
+                f"🌐 *服务器地址：*\n"
+                f"`{api_config.base_url}`\n\n"
+                f"🔑 *API Key：*\n"
+                f"`{api_config.api_key}`\n\n"
+                "⚠️ *注意：请妥善保管您的 API Key*"
+            )
+        else:
+            # API is disabled
+            api_text = (
+                "🔌 *API 状态：未启用*\n\n"
+                "请在配置文件中设置 `api.enable = true` 来启用 API 功能"
+            )
+        
+        await message.answer(
+            api_text,
+            parse_mode="MarkdownV2"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in api command: {e}")
+        await message.answer(
+            "❌ *获取 API 信息时发生错误*\n\n"
             "请稍后重试",
             parse_mode="MarkdownV2"
         )

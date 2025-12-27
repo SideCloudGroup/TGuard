@@ -129,22 +129,49 @@ async def verify_captcha(
                 detail="服务器错误，请稍后重试"
             )
 
-        # Auto-approve the user
-        approval_result = await auto_approve_user(token)
-
-        if approval_result.success:
-            logger.info(f"User auto-approved successfully: {token}")
-            return VerificationResponse(
-                success=True,
-                message="✅ 验证成功！您已被批准加入群组。",
-                redirect_url="tg://"  # Deep link back to Telegram
-            )
+        # Check if this is an API request - if so, must approve (if chat_id is valid)
+        join_request = await get_join_request_by_token(token)
+        if join_request and join_request.request_type == "api":
+            # For API requests, we must attempt approval if chat_id is valid
+            if join_request.chat_id != 0:
+                approval_result = await auto_approve_user(token)
+                if approval_result.success:
+                    logger.info(f"User auto-approved successfully (API request): {token}")
+                    return VerificationResponse(
+                        success=True,
+                        message="✅ 验证成功！",
+                        redirect_url="tg://"  # Deep link back to Telegram
+                    )
+                else:
+                    logger.warning(f"Auto-approval failed for API request: {approval_result.error}")
+                    return VerificationResponse(
+                        success=True,
+                        message="✅ 验证成功！"
+                    )
+            else:
+                # API request with chat_id=0, no approval needed
+                logger.info(f"Verification completed for API request (no chat): {token}")
+                return VerificationResponse(
+                    success=True,
+                    message="✅ 验证成功！"
+                )
         else:
-            logger.warning(f"Auto-approval failed: {approval_result.error}")
-            return VerificationResponse(
-                success=True,
-                message="✅ 验证成功！正在处理您的加群申请，请稍等。"
-            )
+            # Regular Telegram join request - attempt auto-approval
+            approval_result = await auto_approve_user(token)
+
+            if approval_result.success:
+                logger.info(f"User auto-approved successfully: {token}")
+                return VerificationResponse(
+                    success=True,
+                    message="✅ 验证成功！",
+                    redirect_url="tg://"  # Deep link back to Telegram
+                )
+            else:
+                logger.warning(f"Auto-approval failed: {approval_result.error}")
+                return VerificationResponse(
+                    success=True,
+                    message="✅ 验证成功！"
+                )
 
     except HTTPException:
         raise
