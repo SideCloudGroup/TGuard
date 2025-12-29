@@ -57,8 +57,6 @@ class TurnstileProvider(CaptchaProvider):
                     success=True,
                     challenge_ts=result.get("challenge_ts"),
                     hostname=result.get("hostname"),
-                    action=result.get("action"),
-                    cdata=result.get("cdata"),
                     extra_data=result
                 )
             else:
