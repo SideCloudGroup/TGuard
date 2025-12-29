@@ -20,7 +20,7 @@ toml==0.10.2
 httpx==0.28.1
 
 # Security
-python-multipart==0.0.20
+python-multipart==0.0.21
 cryptography==46.0.3
 
 # Development
