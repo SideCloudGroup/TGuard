@@ -1,6 +1,6 @@
 # Telegram Bot
 aiogram==3.24.0
-aiohttp==3.13.2
+aiohttp==3.13.3
 
 # Web API
 fastapi==0.128.0
