@@ -24,4 +24,4 @@ python-multipart==0.0.22
 cryptography==46.0.5
 
 # Development
-python-dotenv==1.2.1
+python-dotenv==1.2.2
