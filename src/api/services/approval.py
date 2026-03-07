@@ -18,6 +18,32 @@ class ApprovalResult(NamedTuple):
     error: str = None
 
 
+async def dismiss_join_request(chat_id: int, user_id: int) -> bool:
+    """Decline (dismiss) a chat join request via Telegram API. Returns True on success."""
+    bot = Bot(token=config.bot.token)
+    try:
+        await bot.decline_chat_join_request(chat_id=chat_id, user_id=user_id)
+        logger.info(f"Dismissed join request: user {user_id} for chat {chat_id}")
+        return True
+    except TelegramBadRequest as e:
+        error_msg = str(e).lower()
+        if "request_not_found" in error_msg:
+            logger.warning(f"Join request not found in Telegram (user={user_id}, chat={chat_id})")
+        elif "user_not_found" in error_msg:
+            logger.warning(f"User {user_id} not found")
+        elif "chat_not_found" in error_msg:
+            logger.warning(f"Chat {chat_id} not found")
+        elif "bot_not_member" in error_msg:
+            logger.warning(f"Bot is not a member of chat {chat_id}")
+        elif "not_enough_rights" in error_msg:
+            logger.warning(f"Bot lacks permissions in chat {chat_id}")
+        else:
+            logger.warning(f"Telegram API error on dismiss: {e}")
+        return False
+    finally:
+        await bot.session.close()
+
+
 async def auto_approve_user(verification_token: str) -> ApprovalResult:
     """Automatically approve user after successful verification."""
     try:
@@ -58,7 +84,7 @@ async def auto_approve_user(verification_token: str) -> ApprovalResult:
                 f"for chat {join_request.chat_id}"
             )
 
-                # Send welcome message to user (optional, only for telegram requests)
+            # Send welcome message to user (optional, only for telegram requests)
             if join_request.request_type == "telegram":
                 try:
                     # Get chat info to include group name

@@ -7,7 +7,6 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
 from src.config.settings import config
-from src.database.models import Base
 from src.database.migrations.manager import run_migrations
 
 logger = logging.getLogger(__name__)

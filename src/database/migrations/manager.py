@@ -1,7 +1,6 @@
 """Migration manager for TGuard database."""
 
 import logging
-from typing import List
 
 from .base import MigrationManager
 from .migration_001_initial_schema import InitialSchemaMigration
@@ -14,12 +13,12 @@ logger = logging.getLogger(__name__)
 def get_migration_manager(session_factory):
     """Get migration manager with all migrations registered."""
     manager = MigrationManager(session_factory)
-    
+
     # Register all migrations
     manager.register_migration(InitialSchemaMigration())
     manager.register_migration(AddUserStatsMigration())
     manager.register_migration(AddRequestTypeMigration())
-    
+
     return manager
 
 

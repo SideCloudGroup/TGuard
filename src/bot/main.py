@@ -8,6 +8,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
 from src.bot.handlers import setup_handlers
+from src.bot.tasks import run_cleanup_loop
 from src.config.settings import config
 from src.database.connection import init_database
 
@@ -46,7 +47,15 @@ async def main():
 
     try:
         logger.info("Bot started successfully")
-        await dp.start_polling(bot)
+        cleanup_task = asyncio.create_task(run_cleanup_loop(60))
+        try:
+            await dp.start_polling(bot)
+        finally:
+            cleanup_task.cancel()
+            try:
+                await cleanup_task
+            except asyncio.CancelledError:
+                pass
     except Exception as e:
         logger.error(f"Bot error: {e}")
     finally:

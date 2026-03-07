@@ -29,8 +29,8 @@ class CreateVerificationResponse(BaseModel):
 
 @router.post("/verification/create", response_model=CreateVerificationResponse)
 async def create_verification(
-    request: CreateVerificationRequest,
-    api_key: str = Depends(verify_api_key)
+        request: CreateVerificationRequest,
+        api_key: str = Depends(verify_api_key)
 ):
     """
     Create a new verification request via external API.
@@ -40,18 +40,18 @@ async def create_verification(
     """
     try:
         user_id = request.user_id
-        
+
         logger.info(f"Creating verification request via API for user {user_id}")
-        
+
         # Generate verification token
         verification_token = generate_verification_token()
-        
+
         # Set expiration time to 10 minutes
         expires_at = datetime.utcnow() + timedelta(minutes=10)
-        
+
         # Use 0 as chat_id for external API requests (not tied to a specific chat)
         chat_id = 0
-        
+
         # Create join request record (with minimal data, marked as API type)
         db_join_request = await create_join_request(
             user_id=user_id,
@@ -62,14 +62,14 @@ async def create_verification(
             verification_token=verification_token,
             request_type="api"
         )
-        
+
         if not db_join_request:
             logger.error(f"Failed to create join request for user {user_id}")
             raise HTTPException(
                 status_code=500,
                 detail="创建验证请求失败"
             )
-        
+
         # Create verification session
         verification_session = await create_verification_session(
             token=verification_token,
@@ -77,25 +77,25 @@ async def create_verification(
             chat_id=chat_id,
             expires_at=expires_at
         )
-        
+
         if not verification_session:
             logger.error(f"Failed to create verification session for user {user_id}")
             raise HTTPException(
                 status_code=500,
                 detail="创建验证会话失败"
             )
-        
+
         # Generate verification URL
         verification_url = f"{config.api.base_url}/verify?token={verification_token}"
-        
+
         logger.info(f"Verification request created successfully for user {user_id}, token: {verification_token[:8]}...")
-        
+
         return CreateVerificationResponse(
             token=verification_token,
             verification_url=verification_url,
             expires_at=expires_at.isoformat()
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:

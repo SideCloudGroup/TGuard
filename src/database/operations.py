@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
 
 from sqlalchemy import select, update, func
 from sqlalchemy.exc import SQLAlchemyError
@@ -295,43 +295,54 @@ async def get_global_stats() -> Dict[str, Any]:
         return {}
 
 
-async def cleanup_expired_sessions():
-    """Clean up expired verification sessions and requests."""
+async def cleanup_expired_sessions() -> List[Tuple[int, int]]:
+    """Clean up expired verification sessions and mark join requests as expired.
+    Returns list of (chat_id, user_id) for Telegram join requests that were marked expired
+    and should be dismissed via Bot API (request_type=telegram, chat_id != 0)."""
     try:
         async with get_session()() as session:
             now = datetime.utcnow()
 
-            # Mark expired verification sessions
+            # 1. Select expired session tokens first (before any update)
+            token_result = await session.execute(
+                select(VerificationSession.token).where(
+                    VerificationSession.expires_at < now,
+                    VerificationSession.captcha_completed == False
+                )
+            )
+            tokens = [row[0] for row in token_result.all()]
+
+            if not tokens:
+                return []
+
+            # 2. Get corresponding pending join requests and build dismiss list
+            join_result = await session.execute(
+                select(JoinRequest.chat_id, JoinRequest.user_id, JoinRequest.request_type).where(
+                    JoinRequest.verification_token.in_(tokens),
+                    JoinRequest.status == RequestStatus.PENDING
+                )
+            )
+            rows = join_result.all()
+            to_dismiss = [
+                (r.chat_id, r.user_id)
+                for r in rows
+                if r.request_type == "telegram" and r.chat_id != 0
+            ]
+
+            # 3. Mark corresponding join requests as expired
             await session.execute(
-                update(VerificationSession)
+                update(JoinRequest)
                 .where(
-                    VerificationSession.expires_at < now,
-                    VerificationSession.captcha_completed == False
+                    JoinRequest.verification_token.in_(tokens),
+                    JoinRequest.status == RequestStatus.PENDING
                 )
-                .values(expires_at=now)
+                .values(status=RequestStatus.EXPIRED)
             )
-
-            # Mark corresponding join requests as expired
-            expired_tokens = await session.execute(
-                select(VerificationSession.token)
-                .where(
-                    VerificationSession.expires_at < now,
-                    VerificationSession.captcha_completed == False
-                )
-            )
-
-            for token_row in expired_tokens:
-                await session.execute(
-                    update(JoinRequest)
-                    .where(
-                        JoinRequest.verification_token == token_row.token,
-                        JoinRequest.status == RequestStatus.PENDING
-                    )
-                    .values(status=RequestStatus.EXPIRED)
-                )
 
             await session.commit()
             logger.info("Cleaned up expired sessions")
+            return to_dismiss
 
     except SQLAlchemyError as e:
         logger.error(f"Error cleaning up expired sessions: {e}")
+        return []

@@ -43,7 +43,7 @@ async def verification_page(request: Request, token: str):
 
         # Pass expected user_id to template for client-side validation
         # The client will verify this matches the Telegram Web App user ID
-        
+
         # Get captcha configuration
         captcha_provider = get_captcha_provider()
         captcha_config = captcha_provider.get_frontend_config()

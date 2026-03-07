@@ -50,7 +50,7 @@ async def cmd_stats(message: Message):
     """Handle /stats command (admin only)."""
     try:
         stats = await get_global_stats()
-        
+
         if not stats:
             await message.answer(
                 "❌ *无法获取统计数据*\n\n"
@@ -66,13 +66,13 @@ async def cmd_stats(message: Message):
         pending = stats.get('pending', 0)
         expired = stats.get('expired', 0)
         approval_rate = stats.get('approval_rate', 0)
-        
+
         today_total = stats.get('today_total', 0)
         today_approved = stats.get('today_approved', 0)
         today_approval_rate = stats.get('today_approval_rate', 0)
-        
+
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
+
         stats_text = (
             f"📊 *TGuard 统计信息*\n"
             f"⏰ 更新时间：`{current_time}`\n\n"
@@ -88,12 +88,12 @@ async def cmd_stats(message: Message):
             f"• 今日通过：`{today_approved}`\n"
             f"• 今日通过率：`{today_approval_rate:.1f}%`"
         )
-        
+
         await message.answer(
             stats_text,
             parse_mode="MarkdownV2"
         )
-        
+
     except Exception as e:
         logger.error(f"Error in stats command: {e}")
         await message.answer(
@@ -108,7 +108,7 @@ async def cmd_api(message: Message):
     """Handle /api command (admin only, not in menu)."""
     try:
         api_config = config.api
-        
+
         if api_config.enable:
             # API is enabled, show URL and KEY
             api_text = (
@@ -125,12 +125,12 @@ async def cmd_api(message: Message):
                 "🔌 *API 状态：未启用*\n\n"
                 "请在配置文件中设置 `api.enable = true` 来启用 API 功能"
             )
-        
+
         await message.answer(
             api_text,
             parse_mode="MarkdownV2"
         )
-        
+
     except Exception as e:
         logger.error(f"Error in api command: {e}")
         await message.answer(

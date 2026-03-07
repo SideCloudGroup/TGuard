@@ -29,7 +29,7 @@ async def verify_api_key(x_api_key: str = Header(..., alias="X-API-Key")) -> str
             status_code=status.HTTP_403_FORBIDDEN,
             detail="API访问已禁用"
         )
-    
+
     # Check if API key is configured
     if not config.api.api_key:
         logger.error("API is enabled but API key is not configured")
@@ -37,7 +37,7 @@ async def verify_api_key(x_api_key: str = Header(..., alias="X-API-Key")) -> str
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="API配置错误"
         )
-    
+
     # Verify API key
     if x_api_key != config.api.api_key:
         logger.warning(f"Invalid API key attempted: {x_api_key[:8]}...")
@@ -46,5 +46,5 @@ async def verify_api_key(x_api_key: str = Header(..., alias="X-API-Key")) -> str
             detail="无效的API密钥",
             headers={"WWW-Authenticate": "X-API-Key"},
         )
-    
+
     return x_api_key

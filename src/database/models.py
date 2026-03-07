@@ -63,5 +63,3 @@ class VerificationSession(Base):
 
     def __repr__(self):
         return f"<VerificationSession(token={self.token}, user_id={self.user_id}, completed={self.captcha_completed})>"
-
-
