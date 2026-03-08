@@ -16,7 +16,14 @@ async def cleanup_and_dismiss_expired_requests() -> None:
     try:
         to_dismiss = await cleanup_expired_sessions()
         for chat_id, user_id in to_dismiss:
-            await dismiss_join_request(chat_id=chat_id, user_id=user_id)
+            try:
+                await dismiss_join_request(chat_id=chat_id, user_id=user_id)
+            except Exception as e:
+                logger.warning(
+                    "Skip dismiss for user %s (chat %s): %s",
+                    user_id, chat_id, e,
+                    exc_info=False
+                )
     except Exception as e:
         logger.exception("Error in cleanup_and_dismiss_expired_requests: %s", e)
 

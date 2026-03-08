@@ -37,9 +37,16 @@ async def dismiss_join_request(chat_id: int, user_id: int) -> bool:
             logger.warning(f"Bot is not a member of chat {chat_id}")
         elif "not_enough_rights" in error_msg:
             logger.warning(f"Bot lacks permissions in chat {chat_id}")
+        elif "deactivated" in error_msg:
+            logger.warning(f"User {user_id} is deactivated, skipping dismiss")
         else:
             logger.warning(f"Telegram API error on dismiss: {e}")
         return False
+    except Exception as e:
+        if "deactivated" in str(e).lower():
+            logger.warning(f"User {user_id} is deactivated, skipping dismiss: {e}")
+            return False
+        raise
     finally:
         await bot.session.close()
 
