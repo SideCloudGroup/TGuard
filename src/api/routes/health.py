@@ -4,6 +4,7 @@ import logging
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException
+from sqlalchemy import text
 
 from src.captcha.factory import get_captcha_provider
 from src.config.settings import config
@@ -36,8 +37,8 @@ async def detailed_health_check():
 
     # Check database connection
     try:
-        async with get_session() as session:
-            await session.execute("SELECT 1")
+        async with get_session()() as session:
+            await session.execute(text("SELECT 1"))
         health_status["checks"]["database"] = {"status": "healthy"}
     except Exception as e:
         logger.error(f"Database health check failed: {e}")
