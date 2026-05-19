@@ -30,15 +30,17 @@ async def verification_page(request: Request, token: str):
         if session.is_expired:
             logger.warning(f"Expired verification token: {token}")
             return templates.TemplateResponse(
+                request,
                 "expired.html",
-                {"request": request, "message": "验证链接已过期，请重新申请加群"}
+                context={"message": "验证链接已过期，请重新申请加群"},
             )
 
         if session.captcha_completed:
             logger.info(f"Verification already completed: {token}")
             return templates.TemplateResponse(
+                request,
                 "completed.html",
-                {"request": request, "message": "您已完成验证，请等待管理员审核"}
+                context={"message": "您已完成验证，请等待管理员审核"},
             )
 
         # Pass expected user_id to template for client-side validation
@@ -49,14 +51,14 @@ async def verification_page(request: Request, token: str):
         captcha_config = captcha_provider.get_frontend_config()
 
         return templates.TemplateResponse(
+            request,
             "verify.html",
-            {
-                "request": request,
+            context={
                 "token": token,
                 "expected_user_id": session.user_id,
                 "captcha_config": captcha_config,
-                "api_base_url": config.api.base_url
-            }
+                "api_base_url": config.api.base_url,
+            },
         )
 
     except HTTPException:
@@ -64,24 +66,19 @@ async def verification_page(request: Request, token: str):
     except Exception as e:
         logger.error(f"Error serving verification page: {e}")
         return templates.TemplateResponse(
+            request,
             "error.html",
-            {"request": request, "message": "页面加载失败，请稍后重试"}
+            context={"message": "页面加载失败，请稍后重试"},
         )
 
 
 @router.get("/success", response_class=HTMLResponse)
 async def success_page(request: Request):
     """Success page after verification."""
-    return templates.TemplateResponse(
-        "success.html",
-        {"request": request}
-    )
+    return templates.TemplateResponse(request, "success.html")
 
 
 @router.get("/", response_class=HTMLResponse)
 async def index_page(request: Request):
     """Index page with bot information."""
-    return templates.TemplateResponse(
-        "index.html",
-        {"request": request}
-    )
+    return templates.TemplateResponse(request, "index.html")
