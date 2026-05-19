@@ -18,12 +18,17 @@ if not CONFIG_PATH.exists():
 @pytest.fixture
 def mock_captcha_provider():
     """Minimal captcha provider for template rendering tests."""
+    from src.captcha.base import CaptchaVerificationResult
+
     provider = MagicMock()
     provider.provider_name = "hcaptcha"
     provider.get_frontend_config.return_value = {
         "provider": "hcaptcha",
         "site_key": "test-site-key",
     }
+    provider.verify = AsyncMock(
+        return_value=CaptchaVerificationResult(success=True)
+    )
     return provider
 
 
@@ -64,5 +69,27 @@ def make_verification_session(
         user_id=user_id,
         chat_id=chat_id,
         captcha_completed=captcha_completed,
+        created_time=datetime.utcnow(),
         expires_at=expires_at,
+    )
+
+
+def make_join_request(
+    *,
+    token: str = "test-token",
+    user_id: int = 123456,
+    chat_id: int = -100123456,
+    request_type: str = "telegram",
+    status: str = "pending",
+):
+    """Build a JoinRequest instance for route tests."""
+    from src.database.models import JoinRequest
+
+    return JoinRequest(
+        user_id=user_id,
+        chat_id=chat_id,
+        first_name="Test",
+        verification_token=token,
+        request_type=request_type,
+        status=status,
     )
