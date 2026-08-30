@@ -2,7 +2,8 @@ name: Build & Push Docker (multi-arch)
 
 on:
   push:
-    tags: [ "v*" ]
+    branches: [dev]
+    tags: ["v*"]
 
 permissions:
   contents: read
@@ -18,9 +19,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-    
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Prepare configuration
+        run: cp config.example.toml config.toml
+
+      - name: Run tests
+        run: pytest -v
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -45,7 +70,8 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=tag
-            type=raw,value=latest
+            type=raw,value=latest,enable=${{ github.ref_type == 'tag' }}
+            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/dev' }}
 
       - name: Build and push multi-arch image
         uses: docker/build-push-action@v6
@@ -62,4 +88,5 @@ jobs:
 
       - name: Summary
         run: |
-          echo "✅ Pushed multi-arch image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+          echo "✅ Pushed multi-arch image tags:"
+          echo "${{ steps.meta.outputs.tags }}"

@@ -52,3 +52,7 @@ base_url = "https://example.com"
 enable = false
 # API Key for external API authentication (X-API-Key header)
 api_key = ""
+
+[cleanup]
+# Retention period in days for expired sessions and verification records
+retention_days = 30

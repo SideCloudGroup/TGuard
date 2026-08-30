@@ -77,12 +77,19 @@ class APIConfig:
 
 
 @dataclass
+class CleanupConfig:
+    """Data retention configuration."""
+    retention_days: int = 30
+
+
+@dataclass
 class Config:
     """Main configuration class."""
     bot: BotConfig
     database: DatabaseConfig
     captcha: CaptchaConfig
     api: APIConfig
+    cleanup: CleanupConfig
 
 
 @lru_cache()
@@ -113,6 +120,9 @@ def load_config(config_path: str = "config.toml") -> Config:
             base_url=data['api']['base_url'],
             enable=data['api'].get('enable', False),
             api_key=data['api'].get('api_key', '')
+        ),
+        cleanup=CleanupConfig(
+            retention_days=data.get('cleanup', {}).get('retention_days', 30)
         )
     )
 

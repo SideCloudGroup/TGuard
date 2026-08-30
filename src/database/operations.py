@@ -1,10 +1,10 @@
 """Database operations for TGuard bot."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Tuple
 
-from sqlalchemy import select, update, func
+from sqlalchemy import select, update, delete, func
 from sqlalchemy.exc import SQLAlchemyError
 
 from src.database.connection import get_session
@@ -346,3 +346,39 @@ async def cleanup_expired_sessions() -> List[Tuple[int, int]]:
     except SQLAlchemyError as e:
         logger.error(f"Error cleaning up expired sessions: {e}")
         return []
+
+
+async def purge_stale_records(retention_days: int = 30) -> Dict[str, int]:
+    """Delete expired sessions and finished join/auth records older than retention_days."""
+    try:
+        async with get_session()() as session:
+            cutoff = datetime.utcnow() - timedelta(days=retention_days)
+
+            session_result = await session.execute(
+                delete(VerificationSession).where(
+                    VerificationSession.created_time < cutoff
+                )
+            )
+            request_result = await session.execute(
+                delete(JoinRequest).where(
+                    JoinRequest.request_time < cutoff,
+                    JoinRequest.status != RequestStatus.PENDING
+                )
+            )
+
+            await session.commit()
+            deleted = {
+                "sessions": session_result.rowcount or 0,
+                "join_requests": request_result.rowcount or 0,
+            }
+            if deleted["sessions"] or deleted["join_requests"]:
+                logger.info(
+                    "Purged stale records older than %s days: %s",
+                    retention_days,
+                    deleted,
+                )
+            return deleted
+
+    except SQLAlchemyError as e:
+        logger.error(f"Error purging stale records: {e}")
+        return {"sessions": 0, "join_requests": 0}

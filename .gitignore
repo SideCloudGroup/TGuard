@@ -23,6 +23,7 @@ MANIFEST
 
 # Virtual Environment
 venv/
+.venv/
 env/
 ENV/
 
@@ -58,3 +59,8 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Tests
+.pytest_cache/
+.coverage
+htmlcov/
