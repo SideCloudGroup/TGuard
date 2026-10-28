@@ -90,13 +90,17 @@ async def verify_captcha(
         join_request = await get_join_request_by_token(token)
         is_api_request = join_request is not None and join_request.request_type == "api"
 
-        if verification_req.init_data or not is_api_request:
-            # Telegram requests are opened via a web_app button, so signed initData is mandatory
-            telegram_user = validate_init_data(verification_req.init_data or "", config.bot.token)
-            claimed_user_id = telegram_user["id"] if telegram_user else None
+        telegram_user = validate_init_data(verification_req.init_data or "", config.bot.token)
+        if telegram_user:
+            claimed_user_id = telegram_user["id"]
             identity_ok = claimed_user_id == session.user_id
+        elif not is_api_request:
+            # Telegram requests are opened via our own web_app button, so signed initData is mandatory
+            claimed_user_id = None
+            identity_ok = False
         else:
-            # External API links may be opened outside Telegram; fall back to the client-reported ID
+            # External API links may be opened outside Telegram or from another bot's web_app button,
+            # whose initData is signed with a token we don't have; fall back to the client-reported ID
             claimed_user_id = verification_req.user_id
             identity_ok = claimed_user_id is None or claimed_user_id == session.user_id
 
