@@ -136,11 +136,17 @@ async def test_verify_api_request_without_chat_skips_approval(client, monkeypatc
         "src.api.routes.verification.auto_approve_user",
         approve_mock,
     )
+    mark_approved_mock = AsyncMock(return_value=True)
+    monkeypatch.setattr(
+        "src.api.routes.verification.approve_join_request",
+        mark_approved_mock,
+    )
 
     response = await client.post(VERIFY_URL, json=VERIFY_PAYLOAD)
 
     assert response.status_code == 200
     approve_mock.assert_not_awaited()
+    mark_approved_mock.assert_awaited_once_with("test-token")
 
 
 @pytest.mark.asyncio

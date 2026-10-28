@@ -88,7 +88,7 @@ async def test_cleanup_expired_sessions_marks_pending_and_returns_dismiss_list(d
 
 
 @pytest.mark.asyncio
-async def test_purge_stale_records_deletes_old_finished_data_only(db_session):
+async def test_purge_stale_records_deletes_only_old_data(db_session):
     now = datetime.utcnow()
     old = now - timedelta(days=40)
     recent = now - timedelta(days=3)
@@ -143,7 +143,7 @@ async def test_purge_stale_records_deletes_old_finished_data_only(db_session):
     deleted = await purge_stale_records(retention_days=30)
 
     assert deleted["sessions"] == 1
-    assert deleted["join_requests"] == 1
+    assert deleted["join_requests"] == 2
 
     async with db_session() as session:
         from sqlalchemy import select
@@ -152,10 +152,7 @@ async def test_purge_stale_records_deletes_old_finished_data_only(db_session):
         requests = (await session.execute(select(JoinRequest))).scalars().all()
 
     assert {item.token for item in sessions} == {"recent-session"}
-    assert {item.verification_token for item in requests} == {
-        "recent-approved",
-        "old-pending",
-    }
+    assert {item.verification_token for item in requests} == {"recent-approved"}
 
 
 @pytest.mark.asyncio
