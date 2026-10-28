@@ -1,7 +1,7 @@
 """External API routes for creating verification requests."""
 
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
@@ -10,6 +10,7 @@ from src.api.dependencies import verify_api_key
 from src.config.settings import config
 from src.database.operations import create_join_request, create_verification_session
 from src.utils.crypto import generate_verification_token
+from src.utils.time import utcnow
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -46,8 +47,7 @@ async def create_verification(
         # Generate verification token
         verification_token = generate_verification_token()
 
-        # Set expiration time to 10 minutes
-        expires_at = datetime.utcnow() + timedelta(minutes=10)
+        expires_at = utcnow() + timedelta(minutes=config.captcha.expire_minutes)
 
         # Use 0 as chat_id for external API requests (not tied to a specific chat)
         chat_id = 0

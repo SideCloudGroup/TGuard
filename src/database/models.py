@@ -1,11 +1,11 @@
 """Database models for TGuard bot."""
 
-from datetime import datetime
 from enum import Enum
 
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, BigInteger, Text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql import func
+from sqlalchemy.orm import declarative_base
+
+from src.utils.time import utcnow
 
 Base = declarative_base()
 
@@ -30,7 +30,7 @@ class JoinRequest(Base):
     last_name = Column(String(255), nullable=True)
     verification_token = Column(String(64), nullable=False, unique=True, index=True)
     status = Column(String(20), nullable=False, default=RequestStatus.PENDING, index=True)
-    request_time = Column(DateTime, nullable=False, default=func.now())
+    request_time = Column(DateTime, nullable=False, default=utcnow)
     processed_time = Column(DateTime, nullable=True)
     admin_id = Column(BigInteger, nullable=True)
     verification_completed = Column(Boolean, nullable=False, default=False)
@@ -52,14 +52,14 @@ class VerificationSession(Base):
     captcha_response = Column(Text, nullable=True)
     ip_address = Column(String(45), nullable=True)  # IPv6 support
     user_agent = Column(Text, nullable=True)
-    created_time = Column(DateTime, nullable=False, default=func.now())
+    created_time = Column(DateTime, nullable=False, default=utcnow)
     completed_time = Column(DateTime, nullable=True)
     expires_at = Column(DateTime, nullable=False)
 
     @property
     def is_expired(self) -> bool:
         """Check if session is expired."""
-        return datetime.utcnow() > self.expires_at
+        return utcnow() > self.expires_at
 
     def __repr__(self):
         return f"<VerificationSession(token={self.token}, user_id={self.user_id}, completed={self.captcha_completed})>"

@@ -7,7 +7,9 @@
 {% if captcha_config.provider == 'hcaptcha' %}
 <script async defer src="https://js.hcaptcha.com/1/api.js"></script>
 {% elif captcha_config.provider == 'cap' %}
-<script src="https://cdn.jsdelivr.net/npm/@cap.js/widget"></script>
+<script src="https://cdn.jsdelivr.net/npm/@cap.js/widget@0.1.58/cap.min.js"
+        integrity="sha384-KhjwzP/vdfVipXU8YRs7tdYICX7Bcpl4biGuQZgNkwICZe/3Xm7KKezqHn/1SZWX"
+        crossorigin="anonymous"></script>
 {% elif captcha_config.provider == 'turnstile' %}
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 {% endif %}
@@ -31,7 +33,7 @@
                 <!-- Cap.js widget will be rendered here -->
                 <cap-widget
                         data-cap-api-endpoint="{{ captcha_config.endpoint }}"
-                        data-cap-site-key="{{ captcha_config.site_key }}"
+                        data-cap-lang="zh-cn"
                         id="cap-widget"
                 ></cap-widget>
                 {% elif captcha_config.provider == 'turnstile' %}
@@ -56,17 +58,21 @@
 
 {% block extra_scripts %}
 <script>
-    const token = "{{ token }}";
-    const apiBaseUrl = "{{ api_base_url }}";
-    const captchaProvider = "{{ captcha_config.provider }}";
-    const expectedUserId = {{ expected_user_id }};
+    const token = {{ token|tojson }};
+    const apiBaseUrl = {{ api_base_url|tojson }};
+    const captchaProvider = {{ captcha_config.provider|tojson }};
+    const expectedUserId = {{ expected_user_id|tojson }};
     let captchaResponse = null;
     
-    // Get user ID from Telegram Web App
+    // Get user ID and signed initData from Telegram Web App
     let telegramUserId = null;
+    let telegramInitData = null;
     try {
         if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
             telegramUserId = tg.initDataUnsafe.user.id;
+        }
+        if (tg && tg.initData) {
+            telegramInitData = tg.initData;
         }
     } catch (e) {
         console.error('Failed to get Telegram user ID:', e);
@@ -156,11 +162,13 @@
     }
 
     function onCapError(event) {
+        console.error('Cap.js error:', event.detail && event.detail.code, event.detail && event.detail.message);
         showError('验证组件加载失败，请刷新页面重试');
         hapticError();
     }
 
-    function onCapExpire(event) {
+    // Fired when the widget is reset, including when a solved token expires
+    function onCapReset(event) {
         captchaResponse = null;
     }
 
@@ -224,7 +232,7 @@
             // Add event listeners
             capWidget.addEventListener('solve', onCapSolve);
             capWidget.addEventListener('error', onCapError);
-            capWidget.addEventListener('expire', onCapExpire);
+            capWidget.addEventListener('reset', onCapReset);
         };
 
         // Check if Cap.js is loaded
@@ -266,7 +274,8 @@
                 body: JSON.stringify({
                     token: token,
                     captcha_response: captchaResponse,
-                    user_id: telegramUserId
+                    user_id: telegramUserId,
+                    init_data: telegramInitData
                 })
             });
 
@@ -325,7 +334,11 @@
                 turnstile.reset('#turnstile-container');
             }
             {% elif captcha_config.provider == 'cap' %}
-            // Cap.js auto-resets on error, just clear the response
+            // Cap tokens are single-use, so the widget must be solved again
+            const capWidget = document.getElementById('cap-widget');
+            if (capWidget && typeof capWidget.reset === 'function') {
+                capWidget.reset();
+            }
             {% endif %}
             captchaResponse = null;
 

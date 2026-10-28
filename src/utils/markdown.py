@@ -11,7 +11,7 @@ def escape_markdown_v2(text: str) -> str:
         return ""
 
     # List of characters that need to be escaped in MarkdownV2
-    special_chars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']
+    special_chars = ['\\', '_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']
 
     for char in special_chars:
         text = text.replace(char, f'\\{char}')

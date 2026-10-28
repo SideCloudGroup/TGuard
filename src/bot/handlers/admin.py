@@ -106,6 +106,10 @@ async def cmd_stats(message: Message):
 @router.message(Command("api"), AdminFilter())
 async def cmd_api(message: Message):
     """Handle /api command (admin only, not in menu)."""
+    if message.chat.type != "private":
+        await message.answer("⚠️ 为避免泄露 API Key，请在与机器人的私聊中使用此命令")
+        return
+
     try:
         api_config = config.api
 

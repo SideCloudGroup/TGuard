@@ -1,7 +1,7 @@
 """FastAPI backend for TGuard verification system."""
 
-import asyncio
 import logging
+import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -9,6 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from src.api.routes import verification, static_files, health, external
+from src.api.services.approval import close_bot
+from src.captcha.factory import close_captcha_provider
 from src.config.settings import config
 from src.database.connection import init_database, close_database
 
@@ -34,6 +36,8 @@ async def lifespan(app: FastAPI):
 
     # Cleanup
     logger.info("Shutting down TGuard API server...")
+    await close_captcha_provider()
+    await close_bot()
     await close_database()
 
 
@@ -49,7 +53,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # In production, specify exact origins
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
@@ -67,11 +71,11 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     """Log all requests."""
-    start_time = asyncio.get_event_loop().time()
+    start_time = time.perf_counter()
 
     response = await call_next(request)
 
-    process_time = asyncio.get_event_loop().time() - start_time
+    process_time = time.perf_counter() - start_time
     logger.info(
         f"{request.method} {request.url.path} - "
         f"Status: {response.status_code} - "

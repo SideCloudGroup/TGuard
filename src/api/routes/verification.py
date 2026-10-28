@@ -8,11 +8,13 @@ from pydantic import BaseModel
 
 from src.api.services.approval import auto_approve_user
 from src.captcha.factory import get_captcha_provider
+from src.config.settings import config
 from src.database.operations import (
     get_verification_session,
     complete_verification,
     get_join_request_by_token
 )
+from src.utils.telegram import validate_init_data
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -23,6 +25,7 @@ class VerificationRequest(BaseModel):
     token: str
     captcha_response: str
     user_id: Optional[int] = None
+    init_data: Optional[str] = None
 
 
 class VerificationResponse(BaseModel):
@@ -56,12 +59,12 @@ async def verify_captcha(
         token = verification_req.token
         captcha_response = verification_req.captcha_response
 
-        logger.info(f"Processing verification for token: {token}")
+        logger.info(f"Processing verification for token: {token[:8]}...")
 
         # Get verification session
         session = await get_verification_session(token)
         if not session:
-            logger.warning(f"Verification session not found: {token}")
+            logger.warning(f"Verification session not found: {token[:8]}...")
             raise HTTPException(
                 status_code=404,
                 detail="验证会话不存在或已过期"
@@ -69,7 +72,7 @@ async def verify_captcha(
 
         # Check if session is expired
         if session.is_expired:
-            logger.warning(f"Verification session expired: {token}")
+            logger.warning(f"Verification session expired: {token[:8]}...")
             raise HTTPException(
                 status_code=400,
                 detail="验证会话已过期，请重新申请"
@@ -77,23 +80,35 @@ async def verify_captcha(
 
         # Check if already completed
         if session.captcha_completed:
-            logger.warning(f"Verification already completed: {token}")
+            logger.warning(f"Verification already completed: {token[:8]}...")
             raise HTTPException(
                 status_code=400,
                 detail="验证已完成，请勿重复提交"
             )
 
-        # Verify user ID if provided (for external API requests)
-        if verification_req.user_id is not None:
-            if verification_req.user_id != session.user_id:
-                logger.warning(
-                    f"User ID mismatch for token {token}: "
-                    f"expected {session.user_id}, got {verification_req.user_id}"
-                )
-                raise HTTPException(
-                    status_code=403,
-                    detail="用户身份验证失败"
-                )
+        # Verify the submitter is the user this session was issued to
+        join_request = await get_join_request_by_token(token)
+        is_api_request = join_request is not None and join_request.request_type == "api"
+
+        if verification_req.init_data or not is_api_request:
+            # Telegram requests are opened via a web_app button, so signed initData is mandatory
+            telegram_user = validate_init_data(verification_req.init_data or "", config.bot.token)
+            claimed_user_id = telegram_user["id"] if telegram_user else None
+            identity_ok = claimed_user_id == session.user_id
+        else:
+            # External API links may be opened outside Telegram; fall back to the client-reported ID
+            claimed_user_id = verification_req.user_id
+            identity_ok = claimed_user_id is None or claimed_user_id == session.user_id
+
+        if not identity_ok:
+            logger.warning(
+                f"User identity check failed for token {token[:8]}...: "
+                f"expected {session.user_id}, got {claimed_user_id}"
+            )
+            raise HTTPException(
+                status_code=403,
+                detail="用户身份验证失败"
+            )
 
         # Get client info
         client_ip = get_client_ip(request)
@@ -123,55 +138,28 @@ async def verify_captcha(
         )
 
         if not success:
-            logger.error(f"Failed to complete verification: {token}")
+            logger.error(f"Failed to complete verification: {token[:8]}...")
             raise HTTPException(
                 status_code=500,
                 detail="服务器错误，请稍后重试"
             )
 
-        # Check if this is an API request - if so, must approve (if chat_id is valid)
-        join_request = await get_join_request_by_token(token)
-        if join_request and join_request.request_type == "api":
-            # For API requests, we must attempt approval if chat_id is valid
-            if join_request.chat_id != 0:
-                approval_result = await auto_approve_user(token)
-                if approval_result.success:
-                    logger.info(f"User auto-approved successfully (API request): {token}")
-                    return VerificationResponse(
-                        success=True,
-                        message="✅ 验证成功！",
-                        redirect_url="tg://"  # Deep link back to Telegram
-                    )
-                else:
-                    logger.warning(f"Auto-approval failed for API request: {approval_result.error}")
-                    return VerificationResponse(
-                        success=True,
-                        message="✅ 验证成功！"
-                    )
-            else:
-                # API request with chat_id=0, no approval needed
-                logger.info(f"Verification completed for API request (no chat): {token}")
-                return VerificationResponse(
-                    success=True,
-                    message="✅ 验证成功！"
-                )
-        else:
-            # Regular Telegram join request - attempt auto-approval
-            approval_result = await auto_approve_user(token)
+        # API requests created without a chat (chat_id=0) have nothing to approve
+        if is_api_request and join_request.chat_id == 0:
+            logger.info(f"Verification completed for API request (no chat): {token[:8]}...")
+            return VerificationResponse(success=True, message="✅ 验证成功！")
 
-            if approval_result.success:
-                logger.info(f"User auto-approved successfully: {token}")
-                return VerificationResponse(
-                    success=True,
-                    message="✅ 验证成功！",
-                    redirect_url="tg://"  # Deep link back to Telegram
-                )
-            else:
-                logger.warning(f"Auto-approval failed: {approval_result.error}")
-                return VerificationResponse(
-                    success=True,
-                    message="✅ 验证成功！"
-                )
+        approval_result = await auto_approve_user(token)
+        if not approval_result.success:
+            logger.warning(f"Auto-approval failed: {approval_result.error}")
+            return VerificationResponse(success=True, message="✅ 验证成功！")
+
+        logger.info(f"User auto-approved successfully: {token[:8]}...")
+        return VerificationResponse(
+            success=True,
+            message="✅ 验证成功！",
+            redirect_url="tg://"  # Deep link back to Telegram
+        )
 
     except HTTPException:
         raise

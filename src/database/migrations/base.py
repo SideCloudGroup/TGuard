@@ -2,11 +2,12 @@
 
 import logging
 from abc import ABC, abstractmethod
-from datetime import datetime
 from typing import List, Optional
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.utils.time import utcnow
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ class Migration(ABC):
     def __init__(self):
         self.version = self.get_version()
         self.description = self.get_description()
-        self.created_at = datetime.utcnow()
+        self.created_at = utcnow()
 
     @abstractmethod
     def get_version(self) -> str:

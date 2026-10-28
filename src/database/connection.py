@@ -64,4 +64,5 @@ async def close_database():
 
     if engine:
         await engine.dispose()
+        engine = None
         logger.info("Database connections closed")

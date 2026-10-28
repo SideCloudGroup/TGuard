@@ -186,34 +186,30 @@
         }
     }
 
-    // Show success message
-    function showSuccess(message) {
+    // Render a message card; message is inserted as text, never as HTML
+    function showMessage(message, icon, cardClass, textClass) {
         const container = document.getElementById('message-container');
         if (container) {
             container.innerHTML = `
-                    <div class="card success-animation">
+                    <div class="card ${cardClass}">
                         <div class="text-center">
-                            <div class="text-4xl mb-4">✅</div>
-                            <div class="text-lg font-medium text-green-600">${message}</div>
+                            <div class="text-4xl mb-4">${icon}</div>
+                            <div class="text-lg font-medium ${textClass}" data-message></div>
                         </div>
                     </div>
                 `;
+            container.querySelector('[data-message]').textContent = message;
         }
+    }
+
+    // Show success message
+    function showSuccess(message) {
+        showMessage(message, '✅', 'success-animation', 'text-green-600');
     }
 
     // Show error message
     function showError(message) {
-        const container = document.getElementById('message-container');
-        if (container) {
-            container.innerHTML = `
-                    <div class="card error-shake">
-                        <div class="text-center">
-                            <div class="text-4xl mb-4">❌</div>
-                            <div class="text-lg font-medium text-red-600">${message}</div>
-                        </div>
-                    </div>
-                `;
-        }
+        showMessage(message, '❌', 'error-shake', 'text-red-600');
     }
 
     // Close the web app
