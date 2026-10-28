@@ -6,6 +6,7 @@ from .base import MigrationManager
 from .migration_001_initial_schema import InitialSchemaMigration
 from .migration_002_add_user_stats import AddUserStatsMigration
 from .migration_003_add_request_type import AddRequestTypeMigration
+from .migration_004_fix_stale_api_requests import FixStaleApiRequestsMigration
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,7 @@ def get_migration_manager(session_factory):
     manager.register_migration(InitialSchemaMigration())
     manager.register_migration(AddUserStatsMigration())
     manager.register_migration(AddRequestTypeMigration())
+    manager.register_migration(FixStaleApiRequestsMigration())
 
     return manager
 

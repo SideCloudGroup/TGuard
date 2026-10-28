@@ -10,6 +10,7 @@ from src.api.services.approval import auto_approve_user
 from src.captcha.factory import get_captcha_provider
 from src.config.settings import config
 from src.database.operations import (
+    approve_join_request,
     get_verification_session,
     complete_verification,
     get_join_request_by_token
@@ -88,7 +89,10 @@ async def verify_captcha(
 
         # Verify the submitter is the user this session was issued to
         join_request = await get_join_request_by_token(token)
-        is_api_request = join_request is not None and join_request.request_type == "api"
+        # chat_id=0 sessions can only be issued by the external API, regardless of the join request row
+        is_api_request = session.chat_id == 0 or (
+            join_request is not None and join_request.request_type == "api"
+        )
 
         telegram_user = validate_init_data(verification_req.init_data or "", config.bot.token)
         if telegram_user:
@@ -148,8 +152,11 @@ async def verify_captcha(
                 detail="服务器错误，请稍后重试"
             )
 
-        # API requests created without a chat (chat_id=0) have nothing to approve
-        if is_api_request and join_request.chat_id == 0:
+        # API requests created without a chat (chat_id=0) have no Telegram join request to approve,
+        # but the row must leave PENDING or it is reused by later requests and never purged
+        if is_api_request and (join_request is None or join_request.chat_id == 0):
+            if join_request is not None and not await approve_join_request(token):
+                logger.warning(f"Failed to mark API request as approved: {token[:8]}...")
             logger.info(f"Verification completed for API request (no chat): {token[:8]}...")
             return VerificationResponse(success=True, message="✅ 验证成功！")
 

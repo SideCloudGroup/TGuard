@@ -31,7 +31,7 @@ async def cleanup_and_dismiss_expired_requests() -> None:
 
 
 async def purge_old_records() -> None:
-    """Delete expired sessions and finished auth records past the retention window."""
+    """Delete sessions and join requests past the retention window."""
     try:
         await purge_stale_records(config.cleanup.retention_days)
     except Exception as e:

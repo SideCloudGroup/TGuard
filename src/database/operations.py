@@ -37,8 +37,14 @@ async def create_join_request(
             existing = existing_request.scalar_one_or_none()
 
             if existing:
-                # Update existing request with new token
+                # Update existing request with new token; the superseded token's session must not stay usable
+                await session.execute(
+                    update(VerificationSession)
+                    .where(VerificationSession.token == existing.verification_token)
+                    .values(expires_at=utcnow())
+                )
                 existing.verification_token = verification_token
+                existing.request_type = request_type
                 existing.request_time = utcnow()
                 existing.verification_completed = False
                 await session.commit()
@@ -177,7 +183,7 @@ async def approve_join_request(token: str, admin_id: Optional[int] = None) -> bo
             )
 
             await session.commit()
-            logger.info(f"Join request approved for token {token}")
+            logger.info(f"Join request approved for token {token[:8]}...")
             return True
 
     except SQLAlchemyError as e:
@@ -358,7 +364,7 @@ async def cleanup_expired_sessions() -> List[Tuple[int, int]]:
 
 
 async def purge_stale_records(retention_days: int = 30) -> Dict[str, int]:
-    """Delete expired sessions and finished join/auth records older than retention_days."""
+    """Delete sessions and join requests (including stuck pending ones) older than retention_days."""
     try:
         async with get_session()() as session:
             cutoff = utcnow() - timedelta(days=retention_days)
@@ -368,11 +374,10 @@ async def purge_stale_records(retention_days: int = 30) -> Dict[str, int]:
                     VerificationSession.created_time < cutoff
                 )
             )
+            # request_time is refreshed whenever a pending row is reused, so a pending row this old is stuck
+            # (e.g. verified but auto-approval failed) and would otherwise never be removed
             request_result = await session.execute(
-                delete(JoinRequest).where(
-                    JoinRequest.request_time < cutoff,
-                    JoinRequest.status != RequestStatus.PENDING
-                )
+                delete(JoinRequest).where(JoinRequest.request_time < cutoff)
             )
 
             await session.commit()
