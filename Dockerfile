@@ -15,8 +15,9 @@ RUN pip install --no-cache-dir --user -r requirements.txt
 # Final stage
 FROM python:3.13-alpine
 
-# Install only runtime dependencies
-RUN apk add --no-cache \
+# Install only runtime dependencies (upgrade base packages such as ca-certificates)
+RUN apk upgrade --no-cache \
+    && apk add --no-cache \
     libpq \
     && adduser -D -s /bin/sh app
 
