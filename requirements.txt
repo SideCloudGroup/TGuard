@@ -22,6 +22,8 @@ httpx==0.28.1
 # Security
 python-multipart==0.0.32
 cryptography==50.0.1
+# Revokes compromised eMudhra intermediates
+certifi>=2026.10.19
 
 # Development
 python-dotenv==1.2.3

@@ -1,0 +1,17 @@
+.git
+.github
+.idea
+.vscode
+.pytest_cache
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.*
+config.toml
+data/
+logs/
+*.log
+tests/
+docker-compose*.yml

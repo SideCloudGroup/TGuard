@@ -5,6 +5,7 @@ from functools import lru_cache
 from pathlib import Path
 
 import toml
+from sqlalchemy.engine import URL
 
 
 @dataclass
@@ -28,9 +29,16 @@ class DatabaseConfig:
     max_size: int
 
     @property
-    def url(self) -> str:
+    def url(self) -> URL:
         """Get database URL for asyncpg."""
-        return f"postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.name}"
+        return URL.create(
+            "postgresql+asyncpg",
+            username=self.user,
+            password=self.password,
+            host=self.host,
+            port=self.port,
+            database=self.name,
+        )
 
 
 @dataclass

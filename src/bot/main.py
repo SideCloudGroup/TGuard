@@ -7,6 +7,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 
+from src.api.services.approval import close_bot
 from src.bot.handlers import setup_handlers
 from src.bot.tasks import run_cleanup_loop
 from src.config.settings import config
@@ -59,6 +60,7 @@ async def main():
     except Exception as e:
         logger.error(f"Bot error: {e}")
     finally:
+        await close_bot()
         await bot.session.close()
 
 

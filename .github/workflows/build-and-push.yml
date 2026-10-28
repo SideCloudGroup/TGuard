@@ -4,6 +4,10 @@ on:
   push:
     branches: [dev]
     tags: ["v*"]
+  schedule:
+    # Weekly rebuild to pick up base image and CA certificate updates
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -19,22 +23,60 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  resolve:
+    runs-on: [self-hosted, linux]
+    outputs:
+      targets: ${{ steps.targets.outputs.targets }}
+
+    steps:
+      - name: Resolve build targets
+        id: targets
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "push" ]; then
+            if [ "$REF_TYPE" = "tag" ]; then
+              targets="[{\"ref\":\"$REF\",\"version\":\"$REF_NAME\"}]"
+            else
+              targets="[{\"ref\":\"$REF\",\"version\":\"\"}]"
+            fi
+          else
+            latest_tag=$(git ls-remote --tags --refs --sort=-v:refname "$REPO_URL" 'v*' | head -n1 | sed 's#.*refs/tags/##')
+            targets="[{\"ref\":\"refs/heads/dev\",\"version\":\"\"}"
+            if [ -n "$latest_tag" ]; then
+              targets="$targets,{\"ref\":\"refs/tags/$latest_tag\",\"version\":\"$latest_tag\"}"
+            fi
+            targets="$targets]"
+          fi
+          echo "targets=$targets" >> "$GITHUB_OUTPUT"
+          echo "Build targets: $targets"
+
   test:
-    runs-on: ubuntu-latest
+    needs: resolve
+    runs-on: [self-hosted, linux]
+    strategy:
+      matrix:
+        target: ${{ fromJSON(needs.resolve.outputs.targets) }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ matrix.target.ref }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@v10.3.2
         with:
           python-version: "3.13"
+          activate-environment: true
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements-dev.txt
+        run: uv pip install -r requirements-dev.txt
 
       - name: Prepare configuration
         run: cp config.example.toml config.toml
@@ -43,12 +85,17 @@ jobs:
         run: pytest -v
 
   build:
-    needs: test
-    runs-on: ubuntu-latest
+    needs: [resolve, test]
+    runs-on: [self-hosted, linux]
+    strategy:
+      matrix:
+        target: ${{ fromJSON(needs.resolve.outputs.targets) }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ matrix.target.ref }}
 
       - name: Set up QEMU (for cross-build)
         uses: docker/setup-qemu-action@v3
@@ -69,9 +116,9 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=tag
-            type=raw,value=latest,enable=${{ github.ref_type == 'tag' }}
-            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/dev' }}
+            type=raw,value=${{ matrix.target.version }},enable=${{ matrix.target.version != '' }}
+            type=raw,value=latest,enable=${{ matrix.target.version != '' }}
+            type=raw,value=dev,enable=${{ matrix.target.version == '' }}
 
       - name: Build and push multi-arch image
         uses: docker/build-push-action@v6
@@ -79,6 +126,8 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
+          pull: true
+          no-cache: ${{ github.event_name != 'push' }}
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

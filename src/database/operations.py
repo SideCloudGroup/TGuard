@@ -9,6 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from src.database.connection import get_session
 from src.database.models import JoinRequest, VerificationSession, RequestStatus
+from src.utils.time import utcnow
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ async def create_join_request(
             if existing:
                 # Update existing request with new token
                 existing.verification_token = verification_token
-                existing.request_time = datetime.utcnow()
+                existing.request_time = utcnow()
                 existing.verification_completed = False
                 await session.commit()
                 logger.info(f"Updated existing join request for user {user_id}")
@@ -80,7 +81,7 @@ async def create_verification_session(
             await session.execute(
                 update(VerificationSession)
                 .where(VerificationSession.token == token)
-                .values(expires_at=datetime.utcnow())  # Mark as expired
+                .values(expires_at=utcnow())  # Mark as expired
             )
 
             verification_session = VerificationSession(
@@ -121,21 +122,29 @@ async def complete_verification(
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None
 ) -> bool:
-    """Mark verification as completed."""
+    """Mark verification as completed. Returns False if the session was already completed or expired."""
     try:
         async with get_session()() as session:
-            # Update verification session
-            await session.execute(
+            # Conditional update so concurrent submissions cannot both complete the session
+            session_result = await session.execute(
                 update(VerificationSession)
-                .where(VerificationSession.token == token)
+                .where(
+                    VerificationSession.token == token,
+                    VerificationSession.captcha_completed == False,
+                    VerificationSession.expires_at > utcnow()
+                )
                 .values(
                     captcha_completed=True,
                     captcha_response=captcha_response,
                     ip_address=ip_address,
                     user_agent=user_agent,
-                    completed_time=datetime.utcnow()
+                    completed_time=utcnow()
                 )
             )
+            if session_result.rowcount != 1:
+                await session.rollback()
+                logger.warning(f"Verification session already completed or expired: {token[:8]}...")
+                return False
 
             # Update join request
             await session.execute(
@@ -145,7 +154,7 @@ async def complete_verification(
             )
 
             await session.commit()
-            logger.info(f"Verification completed for token {token}")
+            logger.info(f"Verification completed for token {token[:8]}...")
             return True
 
     except SQLAlchemyError as e:
@@ -162,7 +171,7 @@ async def approve_join_request(token: str, admin_id: Optional[int] = None) -> bo
                 .where(JoinRequest.verification_token == token)
                 .values(
                     status=RequestStatus.APPROVED,
-                    processed_time=datetime.utcnow(),
+                    processed_time=utcnow(),
                     admin_id=admin_id
                 )
             )
@@ -262,7 +271,7 @@ async def get_global_stats() -> Dict[str, Any]:
             approved = counts.get(RequestStatus.APPROVED, 0)
 
             # Get today's stats
-            today = datetime.utcnow().date()
+            today = utcnow().date()
             today_result = await session.execute(
                 select(
                     JoinRequest.status,
@@ -301,7 +310,7 @@ async def cleanup_expired_sessions() -> List[Tuple[int, int]]:
     and should be dismissed via Bot API (request_type=telegram, chat_id != 0)."""
     try:
         async with get_session()() as session:
-            now = datetime.utcnow()
+            now = utcnow()
 
             # 1. Select expired session tokens first (before any update)
             token_result = await session.execute(
@@ -352,7 +361,7 @@ async def purge_stale_records(retention_days: int = 30) -> Dict[str, int]:
     """Delete expired sessions and finished join/auth records older than retention_days."""
     try:
         async with get_session()() as session:
-            cutoff = datetime.utcnow() - timedelta(days=retention_days)
+            cutoff = utcnow() - timedelta(days=retention_days)
 
             session_result = await session.execute(
                 delete(VerificationSession).where(

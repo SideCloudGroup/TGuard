@@ -1,7 +1,8 @@
 """Chat member handlers for join requests."""
 
+import html
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from aiogram import Router
 from aiogram.exceptions import TelegramBadRequest
@@ -10,6 +11,8 @@ from aiogram.types import ChatJoinRequest, InlineKeyboardMarkup, InlineKeyboardB
 from src.config.settings import config
 from src.database.operations import create_join_request, create_verification_session
 from src.utils.crypto import generate_verification_token
+from src.utils.markdown import escape_markdown_v2, format_user_mention
+from src.utils.time import utcnow
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -43,7 +46,7 @@ async def handle_join_request(join_request: ChatJoinRequest):
             return
 
         # Create verification session
-        expires_at = datetime.utcnow() + timedelta(seconds=config.bot.verification_timeout)
+        expires_at = utcnow() + timedelta(seconds=config.bot.verification_timeout)
         verification_session = await create_verification_session(
             token=verification_token,
             user_id=user.id,
@@ -69,7 +72,7 @@ async def handle_join_request(join_request: ChatJoinRequest):
         # Send verification message to user
         try:
             # Create personalized welcome message with group name
-            chat_title = chat.title or "群组"
+            chat_title = html.escape(chat.title or "群组")
             welcome_text = f"欢迎加入群组{chat_title}！请点击下方链接完成人机验证"
 
             await join_request.bot.send_message(
@@ -86,11 +89,12 @@ async def handle_join_request(join_request: ChatJoinRequest):
                 # Try to send message to the group mentioning the user
                 try:
                     bot_info = await join_request.bot.get_me()
-                    username = user.username or user.first_name
+                    mention = format_user_mention(user.username, user.first_name)
+                    bot_mention = escape_markdown_v2(bot_info.username)
+                    # web_app buttons are only allowed in private chats, so no keyboard here
                     await join_request.bot.send_message(
                         chat_id=chat.id,
-                        text=f"@{username}, 请先私聊 @{bot_info.username} 机器人，然后重新申请加群\\.",
-                        reply_markup=keyboard,
+                        text=f"{mention}, 请先私聊 @{bot_mention} 机器人，然后重新申请加群\\.",
                         parse_mode="MarkdownV2"
                     )
                 except Exception as group_msg_error:

@@ -1,5 +1,6 @@
 """FastAPI dependencies for authentication and authorization."""
 
+import hmac
 import logging
 
 from fastapi import Header, HTTPException, status
@@ -39,8 +40,8 @@ async def verify_api_key(x_api_key: str = Header(..., alias="X-API-Key")) -> str
         )
 
     # Verify API key
-    if x_api_key != config.api.api_key:
-        logger.warning(f"Invalid API key attempted: {x_api_key[:8]}...")
+    if not hmac.compare_digest(x_api_key.encode(), config.api.api_key.encode()):
+        logger.warning("Invalid API key attempted")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="无效的API密钥",

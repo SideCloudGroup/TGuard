@@ -1,7 +1,7 @@
 """Captcha provider factory."""
 
 import logging
-from typing import Dict, Type
+from typing import Dict, Optional, Type
 
 from src.config.settings import config
 from .base import CaptchaProvider
@@ -30,58 +30,29 @@ def create_captcha_provider() -> CaptchaProvider:
             f"Available providers: {available}"
         )
 
-    provider_class = CAPTCHA_PROVIDERS[provider_name]
+    provider_config = getattr(config.captcha, provider_name)
+    kwargs = {
+        "site_key": provider_config.site_key,
+        "secret_key": provider_config.secret_key,
+        "timeout": config.captcha.timeout_seconds,
+    }
+    if provider_name == "cap":
+        kwargs["server_url"] = provider_config.server_url
 
-    # Get provider-specific configuration and create provider instance
-    if provider_name == "hcaptcha":
-        provider_config = config.captcha.hcaptcha
-        # Validate configuration
-        if not provider_config.site_key or not provider_config.secret_key:
-            raise ValueError(
-                f"Missing configuration for {provider_name}. "
-                f"Please set site_key and secret_key in config.toml"
-            )
-        provider = provider_class(
-            site_key=provider_config.site_key,
-            secret_key=provider_config.secret_key,
-            timeout=config.captcha.timeout_seconds
+    missing = [key for key in ("server_url", "site_key", "secret_key") if key in kwargs and not kwargs[key]]
+    if missing:
+        raise ValueError(
+            f"Missing configuration for {provider_name}. "
+            f"Please set {', '.join(missing)} in config.toml"
         )
-    elif provider_name == "cap":
-        provider_config = config.captcha.cap
-        # Validate configuration
-        if not provider_config.server_url or not provider_config.site_key or not provider_config.secret_key:
-            raise ValueError(
-                f"Missing configuration for {provider_name}. "
-                f"Please set server_url, site_key and secret_key in config.toml"
-            )
-        provider = provider_class(
-            server_url=provider_config.server_url,
-            site_key=provider_config.site_key,
-            secret_key=provider_config.secret_key,
-            timeout=config.captcha.timeout_seconds
-        )
-    elif provider_name == "turnstile":
-        provider_config = config.captcha.turnstile
-        # Validate configuration
-        if not provider_config.site_key or not provider_config.secret_key:
-            raise ValueError(
-                f"Missing configuration for {provider_name}. "
-                f"Please set site_key and secret_key in config.toml"
-            )
-        provider = provider_class(
-            site_key=provider_config.site_key,
-            secret_key=provider_config.secret_key,
-            timeout=config.captcha.timeout_seconds
-        )
-    else:
-        raise ValueError(f"No configuration found for provider: {provider_name}")
 
+    provider = CAPTCHA_PROVIDERS[provider_name](**kwargs)
     logger.info(f"Created captcha provider: {provider_name}")
     return provider
 
 
 # Global provider instance
-_captcha_provider: CaptchaProvider = None
+_captcha_provider: Optional[CaptchaProvider] = None
 
 
 def get_captcha_provider() -> CaptchaProvider:
@@ -92,3 +63,9 @@ def get_captcha_provider() -> CaptchaProvider:
         _captcha_provider = create_captcha_provider()
 
     return _captcha_provider
+
+
+async def close_captcha_provider() -> None:
+    """Release resources held by the global captcha provider."""
+    if _captcha_provider is not None:
+        await _captcha_provider.aclose()

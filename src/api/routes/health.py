@@ -1,14 +1,13 @@
 """Health check routes."""
 
 import logging
-from datetime import datetime
-
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import text
 
 from src.captcha.factory import get_captcha_provider
 from src.config.settings import config
 from src.database.connection import get_session
+from src.utils.time import utcnow
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -19,7 +18,7 @@ async def health_check():
     """Basic health check."""
     return {
         "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": utcnow().isoformat(),
         "service": "TGuard API"
     }
 
@@ -29,7 +28,7 @@ async def detailed_health_check():
     """Detailed health check with dependencies."""
     health_status = {
         "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": utcnow().isoformat(),
         "service": "TGuard API",
         "version": "1.0.0",
         "checks": {}
@@ -44,7 +43,7 @@ async def detailed_health_check():
         logger.error(f"Database health check failed: {e}")
         health_status["checks"]["database"] = {
             "status": "unhealthy",
-            "error": str(e)
+            "error": "database unavailable"
         }
         health_status["status"] = "unhealthy"
 
@@ -59,7 +58,7 @@ async def detailed_health_check():
         logger.error(f"Captcha provider health check failed: {e}")
         health_status["checks"]["captcha"] = {
             "status": "unhealthy",
-            "error": str(e)
+            "error": "captcha provider unavailable"
         }
         health_status["status"] = "unhealthy"
 

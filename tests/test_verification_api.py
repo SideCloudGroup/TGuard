@@ -12,7 +12,21 @@ VERIFY_URL = "/api/v1/verify"
 VERIFY_PAYLOAD = {
     "token": "test-token",
     "captcha_response": "captcha-token-from-client",
+    "init_data": "signed-init-data",
 }
+
+
+@pytest.fixture(autouse=True)
+def default_identity(monkeypatch):
+    """Treat initData as signed by the session owner unless a test overrides it."""
+    monkeypatch.setattr(
+        "src.api.routes.verification.validate_init_data",
+        lambda init_data, bot_token: {"id": 123456} if init_data else None,
+    )
+    monkeypatch.setattr(
+        "src.api.routes.verification.get_join_request_by_token",
+        AsyncMock(return_value=make_join_request()),
+    )
 
 
 @pytest.mark.asyncio
