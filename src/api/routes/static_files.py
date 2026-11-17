@@ -1,6 +1,7 @@
 """Static file routes for Mini Web App."""
 
 import logging
+import re
 
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import HTMLResponse
@@ -18,14 +19,20 @@ templates = Jinja2Templates(directory="templates")
 
 
 @router.get("/verify", response_class=HTMLResponse)
-async def verification_page(request: Request, token: str):
+async def verification_page(request: Request, token: str, return_bot: str | None = None):
     """Serve verification page for Mini Web App."""
     try:
+        return_url = None
+        if return_bot and re.fullmatch(r"[A-Za-z0-9_]{5,32}", return_bot) and re.fullmatch(r"[A-Za-z0-9_-]{1,61}", token):
+            return_url = f"https://t.me/{return_bot}?start=tg_{token}"
         # Validate token
         session = await get_verification_session(token)
         if not session:
             logger.warning(f"Invalid verification token: {token}")
             raise HTTPException(status_code=404, detail="验证链接无效或已过期")
+
+        if session.chat_id != 0:
+            return_url = None
 
         if session.is_expired:
             logger.warning(f"Expired verification token: {token}")
@@ -40,7 +47,7 @@ async def verification_page(request: Request, token: str):
             return templates.TemplateResponse(
                 request,
                 "completed.html",
-                context={"message": "您已完成验证，请等待管理员审核"},
+                context={"message": "验证成功，请返回 Bot 确认" if return_url else "您已完成验证，请等待管理员审核", "return_url": return_url},
             )
 
         # Pass expected user_id to template for client-side validation
@@ -55,6 +62,7 @@ async def verification_page(request: Request, token: str):
             "verify.html",
             context={
                 "token": token,
+                "return_url": return_url,
                 "expected_user_id": session.user_id,
                 "captcha_config": captcha_config,
                 "api_base_url": config.api.base_url,
