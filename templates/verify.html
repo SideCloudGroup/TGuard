@@ -59,6 +59,11 @@
 {% block extra_scripts %}
 <script>
     const token = {{ token|tojson }};
+    const returnUrl = {{ return_url|default(none)|tojson }};
+    function returnToBot() {
+        try { tg.openTelegramLink(returnUrl); }
+        catch (e) { window.location.href = returnUrl; }
+    }
     const apiBaseUrl = {{ api_base_url|tojson }};
     const captchaProvider = {{ captcha_config.provider|tojson }};
     const expectedUserId = {{ expected_user_id|tojson }};
@@ -284,6 +289,16 @@
             if (response.ok && result.success) {
                 showSuccess(result.message);
                 hapticSuccess();
+
+                if (returnUrl) {
+                    showSuccess('✅ 验证成功！返回 Bot 后，如显示 Start 请点击；也可点击“确认验证”。');
+                    tg.MainButton.setText('返回 Bot');
+                    tg.MainButton.show();
+                    tg.MainButton.enable();
+                    tg.MainButton.onClick(returnToBot);
+                    returnToBot();
+                    return;
+                }
 
                 // No submit button to hide
 

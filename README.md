@@ -250,3 +250,8 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 ---
 
 ⚡ **TGuard** - 让Telegram群组管理更简单、更安全！
+# 外部 Bot 验证回跳
+
+`POST /api/verification/create` 可选接收 `bot_username`（5–32 位字母、数字或下划线）。响应结构保持不变；提供该参数时，返回的 `verification_url` 附带 `return_bot`。外部会话验证成功后可跳回 `https://t.me/<bot_username>?start=tg_<token>`，同时保留手动返回按钮；已完成的验证页面也支持返回。未传该参数的旧客户端及群组入群验证保持原有行为，不需要数据库迁移。
+
+回跳只通知 Bot 查询服务端状态，不是验证凭证。Telegram 客户端可能要求点击 Start，调用方仍应保留手动确认入口，并校验用户、token 和有效期。此功能不需要调用方开放 HTTP 服务，也不引入后台轮询。
