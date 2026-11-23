@@ -26,4 +26,4 @@ cryptography==50.0.1
 certifi>=2026.10.19
 
 # Development
-python-dotenv==1.2.3
+python-dotenv==1.2.4
