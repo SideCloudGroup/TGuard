@@ -12,6 +12,7 @@
 
             {% if return_url %}
             <p class="text-gray-600 mb-6">返回 Bot 后，如显示 Start 请点击；也可点击“确认验证”。</p>
+            <a class="tg-button block w-full" href="{{ return_url }}">返回 Bot</a>
             {% else %}
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <div class="text-blue-700">
@@ -36,13 +37,13 @@
                 </div>
             </div>
 
-            {% endif %}
             <button
                     class="tg-button w-full"
-                    onclick="returnToBot()"
+                    onclick="closeWebApp()"
             >
-                {{ '返回 Bot' if return_url else '返回 Telegram' }}
+                返回 Telegram
             </button>
+            {% endif %}
 
             <div class="mt-6 text-sm text-gray-500">
                 {% if not return_url %}<p>🔔 您将收到处理通知</p>{% endif %}
@@ -55,21 +56,13 @@
 
 {% block extra_scripts %}
 <script>
-    const returnUrl = {{ return_url|default(none)|tojson }};
-    function returnToBot() {
-        if (!returnUrl) { closeWebApp(); return; }
-        try { tg.openTelegramLink(returnUrl); }
-        catch (e) { window.location.href = returnUrl; }
-    }
-    // Keep the manual return button available for clients that do not navigate.
-    // Auto-close after 5 seconds
-    setTimeout(() => {
-        if (!returnUrl) closeWebApp();
-    }, 5000);
+    {% if not return_url %}
+    setTimeout(closeWebApp, 5000);
+    {% endif %}
 
     // Show back button
-    tg.BackButton.show();
-    tg.BackButton.onClick(function () {
+    tg?.BackButton?.show();
+    tg?.BackButton?.onClick(function () {
         tg.close();
     });
 </script>

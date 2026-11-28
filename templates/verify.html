@@ -53,16 +53,32 @@
 
     <!-- Message container for dynamic content -->
     <div id="message-container"></div>
+    {% if return_url %}
+    <div class="text-center mt-4">
+        <a id="return-bot-link" class="tg-button" href="{{ return_url }}" hidden>返回 Bot</a>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
     const token = {{ token|tojson }};
-    const returnUrl = {{ return_url|default(none)|tojson }};
+    const returnLink = document.getElementById('return-bot-link');
     function returnToBot() {
-        try { tg.openTelegramLink(returnUrl); }
-        catch (e) { window.location.href = returnUrl; }
+        if (tg?.openTelegramLink) {
+            try {
+                tg.openTelegramLink(returnLink.href);
+                return;
+            } catch (error) {
+                console.warn('Telegram navigation unavailable', error);
+            }
+        }
+        try {
+            window.location.assign(returnLink.href);
+        } catch (error) {
+            console.warn('Automatic navigation unavailable', error);
+        }
     }
     const apiBaseUrl = {{ api_base_url|tojson }};
     const captchaProvider = {{ captcha_config.provider|tojson }};
@@ -290,17 +306,20 @@
                 showSuccess(result.message);
                 hapticSuccess();
 
-                if (returnUrl) {
+                if (returnLink) {
+                    returnLink.hidden = false;
                     showSuccess('✅ 验证成功！返回 Bot 后，如显示 Start 请点击；也可点击“确认验证”。');
-                    tg.MainButton.setText('返回 Bot');
-                    tg.MainButton.show();
-                    tg.MainButton.enable();
-                    tg.MainButton.onClick(returnToBot);
+                    if (tg?.MainButton) {
+                        tg.MainButton.setText('返回 Bot');
+                        tg.MainButton.show();
+                        tg.MainButton.enable();
+                        tg.MainButton.onClick(returnToBot);
+                    }
                     returnToBot();
                     return;
                 }
 
-                // No submit button to hide
+                if (!tg?.MainButton) return;
 
                 // Show Telegram close button
                 tg.MainButton.setText('🎉 关闭页面');
@@ -370,12 +389,12 @@
     // No initial onClick handler needed
 
     // Handle back button
-    tg.BackButton.onClick(function () {
+    tg?.BackButton?.onClick(function () {
         tg.close();
     });
 
     // Show back button
-    tg.BackButton.show();
+    tg?.BackButton?.show();
 </script>
 
 <style>

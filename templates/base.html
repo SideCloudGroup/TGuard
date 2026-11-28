@@ -154,17 +154,17 @@
 
 <script>
     // Initialize Telegram Web App
-    const tg = window.Telegram.WebApp;
+    const tg = window.Telegram?.WebApp;
 
     // Configure the app
-    tg.ready();
-    tg.expand();
+    tg?.ready();
+    tg?.expand();
 
     // Set header color
-    tg.setHeaderColor('secondary_bg_color');
+    tg?.setHeaderColor('secondary_bg_color');
 
     // Disable closing confirmation for better UX
-    tg.disableClosingConfirmation();
+    tg?.disableClosingConfirmation();
 
     // Global error handler
     window.addEventListener('error', function (e) {
@@ -214,18 +214,18 @@
 
     // Close the web app
     function closeWebApp() {
-        tg.close();
+        tg?.close();
     }
 
     // Haptic feedback
     function hapticSuccess() {
-        if (tg.HapticFeedback) {
+        if (tg?.HapticFeedback) {
             tg.HapticFeedback.notificationOccurred('success');
         }
     }
 
     function hapticError() {
-        if (tg.HapticFeedback) {
+        if (tg?.HapticFeedback) {
             tg.HapticFeedback.notificationOccurred('error');
         }
     }

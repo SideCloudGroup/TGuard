@@ -1,5 +1,6 @@
 """Static file routes for Mini Web App."""
 
+import hmac
 import logging
 import re
 
@@ -10,6 +11,7 @@ from fastapi.templating import Jinja2Templates
 from src.captcha.factory import get_captcha_provider
 from src.config.settings import config
 from src.database.operations import get_verification_session
+from src.utils.crypto import sign_return_bot
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -19,20 +21,16 @@ templates = Jinja2Templates(directory="templates")
 
 
 @router.get("/verify", response_class=HTMLResponse)
-async def verification_page(request: Request, token: str, return_bot: str | None = None):
+async def verification_page(
+    request: Request, token: str, return_bot: str | None = None, return_sig: str | None = None
+):
     """Serve verification page for Mini Web App."""
     try:
-        return_url = None
-        if return_bot and re.fullmatch(r"[A-Za-z0-9_]{5,32}", return_bot) and re.fullmatch(r"[A-Za-z0-9_-]{1,61}", token):
-            return_url = f"https://t.me/{return_bot}?start=tg_{token}"
         # Validate token
         session = await get_verification_session(token)
         if not session:
             logger.warning(f"Invalid verification token: {token}")
             raise HTTPException(status_code=404, detail="验证链接无效或已过期")
-
-        if session.chat_id != 0:
-            return_url = None
 
         if session.is_expired:
             logger.warning(f"Expired verification token: {token}")
@@ -41,6 +39,17 @@ async def verification_page(request: Request, token: str, return_bot: str | None
                 "expired.html",
                 context={"message": "验证链接已过期，请重新申请加群"},
             )
+
+        return_url = None
+        if (
+            session.chat_id == 0 and config.bot.token and return_bot and return_sig
+            and re.fullmatch(r"[A-Za-z0-9_]{5,32}", return_bot)
+            and re.fullmatch(r"[A-Za-z0-9_-]{1,61}", token)
+            and hmac.compare_digest(
+                return_sig.encode(), sign_return_bot(token, return_bot, config.bot.token).encode()
+            )
+        ):
+            return_url = f"https://t.me/{return_bot}?start=tg_{token}"
 
         if session.captcha_completed:
             logger.info(f"Verification already completed: {token}")

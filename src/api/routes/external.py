@@ -2,15 +2,15 @@
 
 import logging
 from datetime import timedelta
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
-from urllib.parse import urlencode
 
 from src.api.dependencies import verify_api_key
 from src.config.settings import config
 from src.database.operations import create_join_request, create_verification_session
-from src.utils.crypto import generate_verification_token
+from src.utils.crypto import generate_verification_token, sign_return_bot
 from src.utils.time import utcnow
 
 logger = logging.getLogger(__name__)
@@ -89,8 +89,11 @@ async def create_verification(
 
         # Generate verification URL
         verification_url = f"{config.api.base_url}/verify?token={verification_token}"
-        if request.bot_username:
-            verification_url += "&" + urlencode({"return_bot": request.bot_username})
+        if request.bot_username and config.bot.token:
+            verification_url += "&" + urlencode({
+                "return_bot": request.bot_username,
+                "return_sig": sign_return_bot(verification_token, request.bot_username, config.bot.token),
+            })
 
         logger.info(f"Verification request created successfully for user {user_id}, token: {verification_token[:8]}...")
 
